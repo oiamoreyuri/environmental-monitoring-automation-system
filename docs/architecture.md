@@ -1,43 +1,25 @@
-System Architecture
+# System Architecture
 
-┌───────────────┐
-│   Operator    │
-│  (Mobile App) │
-└──────┬────────┘
-       │
-       ▼
-┌───────────────┐
-│   QR Code     │
-│ Identification│
-└──────┬────────┘
-       │
-       ▼
-┌────────────────────┐
-│ Pre-configured     │
-│ Digital Form       │
-│ (Google Forms)     │
-└────────┬───────────┘
-         │
-         ▼
-┌────────────────────┐
-│ Cloud Data Storage │
-│ (Google Sheets)    │
-└────────┬───────────┘
-         │
-         ▼
-┌────────────────────┐
-│ ETL Processing     │
-│ Python Scripts     │
-└────────┬───────────┘
-         │
-         ▼
-┌────────────────────┐
-│ Operational Reports│
-│ Trend Analysis     │
-│ Audit Readiness    │
-└────────────────────┘
+```mermaid
+flowchart TD
 
-Architecture Goals
+A[Operator<br/>Mobile Device]
+--> B[QR Code Identification]
+
+B --> C[Pre-configured Digital Form<br/>Google Forms]
+
+C --> D[Cloud Storage<br/>Google Sheets]
+
+D --> E[ETL Processing<br/>Python Scripts]
+
+E --> F[Operational Reports]
+
+E --> G[Trend Analysis]
+
+E --> H[Audit Readiness]
+```
+
+## Architecture Goals
 
 * low operational friction
 * high traceability
@@ -48,6 +30,6 @@ Architecture Goals
 
 ⸻
 
-Reliability Considerations
+## Reliability Considerations
 
 The architecture was designed to reduce manual transcription steps and improve operational traceability while maintaining low infrastructure complexity.
