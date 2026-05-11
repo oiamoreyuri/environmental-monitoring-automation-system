@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body{font-family:Arial,sans-serif;margin:24px;color:#222;font-size:13px;}
+    h1{color:#2e7d32;font-size:16px;}
+    table{width:100%;border-collapse:collapse;margin-top:16px;}
+    th{background:#2e7d32;color:white;padding:8px 12px;text-align:left;font-size:12px;}
+    td{padding:8px 12px;border-bottom:1px solid #eee;vertical-align:middle;}
+    tr:hover td{background:#f9f9f9;}
+    .btn{background:#2e7d32;color:white;padding:4px 12px;border-radius:4px;border:none;cursor:pointer;font-size:11px;}
+    .btn:disabled{background:#aaa;}
+  </style>
+</head>
+<body>
+  <h1>Aprovação de Relatórios — <?= nomeMes ?> de <?= ano ?></h1>
+  <p style="color:#666;font-size:12px;">Abra cada PDF, revise o conteúdo e clique em Aprovar para registrar sua análise crítica como PCQI.</p>
+  <table>
+    <tr><th>Equipamento</th><th>Local</th><th>Relatório</th><th>Status</th><th>Ação</th></tr>
+    <?!= linhas ?>
+  </table>
+  <p id="msg" style="color:#2e7d32;font-weight:bold;display:none;">✔ Aprovado com sucesso!</p>
+  <p style="font-size:10px;color:#aaa;margin-top:24px;"><?= empresa ?></p>
+
+  <script>
+    function aprovar(cod, mes, ano, btn) {
+      btn.disabled = true;
+      btn.textContent = "Aguarde...";
+      google.script.run
+        .withSuccessHandler(function(ok) {
+          if (ok) {
+            btn.closest('tr').querySelector('td:nth-child(4)').innerHTML =
+              '<span style="color:#2e7d32;font-weight:bold;">✔ Aprovado</span>';
+            btn.closest('td').innerHTML = '<span style="color:#aaa;font-size:11px;">—</span>';
+          } else {
+            btn.disabled = false;
+            btn.textContent = "Aprovar";
+            alert("Erro ao aprovar. Tente novamente.");
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = "Aprovar";
+          alert("Erro: " + err.message);
+        })
+        .aprovarRelatorio(cod, mes, ano);
+    }
+  </script>
+</body>
+</html>
