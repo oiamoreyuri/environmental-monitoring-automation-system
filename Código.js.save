@@ -1,11 +1,8 @@
-// ============================================================
-// CONFIGURAÇÕES — edite apenas esta seção
-// ============================================================
-var CONFIG = {
+//var CONFIG = {
   formUrl:     "YOUR_GOOGLE_FORM_URL",
   fusoHorario: "America/Sao_Paulo",
   planilhaId:  "YOUR_SPREADSHEET_ID",
-    entries: {
+  entries: {
     id:   "YOUR_ENTRY_ID_EQUIPMENT",
     data: "YOUR_ENTRY_ID_DATE",
     hora: "YOUR_ENTRY_ID_TIME"
@@ -19,10 +16,38 @@ var CONFIG = {
   responsavelNome:  "YOUR_NAME",
   responsavelCargo: "YOUR_ROLE",
   responsavelEmail: "YOUR_EMAIL",
-  empresa:          "YOUR_COMPANY_NAME",
-  assinaturaId: "YOUR_SIGNATURE_FILE_ID",
-  urlAprovacao: "YOUR_WEBAPP_URL" 
+  »»»»»»»»empresa:          "YOUR_COMPANY_NAME",
+  assinaturaId:     "YOUR_SIGNATURE_FILE_ID",
+  urlAprovacao:     "YOUR_WEBAPP_URL"
 };
+
+»»=============================================================
+// CONFIGURAÇÕES — edite apenas esta seção
+// ============================================================
+var CONFIG = {
+  formUrl:     "https://docs.google.com/forms/d/e/1FAIpQLScF_w_FqH_Iw4lkKvSl9jBGj0WmxmUTQs2JQfyyPye3GNCJoQ/viewform",
+  fusoHorario: "America/Sao_Paulo",
+  planilhaId:  "1-afpK9G2CnET4Cz4b8RSyhqODcljQgU7QqwvY3gllXw",
+    entries: {
+    id:   "1224765940",
+    data: "1883204876",
+    hora: "1950793831"
+  },
+  equipamentosValidos: [
+    "COD-1040","COD-1041","COD-1042","COD-1043",
+    "COD-1044","COD-1045","COD-1046","COD-1047",
+    "COD-1048","COD-1049"
+  ],
+  abaLog:           "LOG_ACESSO",
+  responsavelNome:  "Yuri de Carvalho Oiamoré",
+  responsavelCargo: "Supervisor de Controle de Qualidade",
+  responsavelEmail: "controledequalidade@docefruta.ind.br",
+  empresa:          "Docefruta Ind. e Com. de Alimentos Ltda.",
+  assinaturaId: "1fSTtPWaRCOUD6ldftL8jmBIUB7rzkjHt",
+  urlAprovacao: "https://script.google.com/macros/s/AKfycbziibUumydFd4gFJlpMecqO-u1eD5z-GJR46RsbnKeWBdcdkSgYeYHtZgRAK7xs2Qswhw/exec" 
+};
+
+
 
 // ============================================================
 // ENDPOINT PRINCIPAL — QR Code
@@ -419,9 +444,9 @@ function isDiaUtil_(data, feriados) {
 // ============================================================
 
 var ALERTA = {
-  emailDestino:    "YOUR_EMAIL",
-  whatsappNumero:  "YOUR_WHATSAPP_NUMBER",
-  whatsappApiKey:  "YOUR_CALLMEBOT_API_KEY",
+  emailDestino:    "controledequalidade@docefruta.ind.br",
+  whatsappNumero:  "5514998475113",
+  whatsappApiKey:  "9567430",
   equipamentosAtivos: [
     "COD-1040","COD-1041","COD-1042",
     "COD-1044","COD-1045","COD-1046","COD-1047","COD-1048"
