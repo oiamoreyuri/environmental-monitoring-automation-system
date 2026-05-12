@@ -21,7 +21,7 @@ var CONFIG = {
   responsavelEmail: "YOUR_EMAIL",
   empresa:          "YOUR_COMPANY_NAME",
   assinaturaId: "YOUR_SIGNATURE_FILE_ID",
-  urlAprovacao: "YOUR_WEBAPP_URL" 
+  urlAprovacao: "https://script.google.com/macros/s/YOUR_WEBAPP_URL" 
 };
 
 // ============================================================
@@ -31,20 +31,23 @@ function doGet(e) {
   var params = e ? e.parameter : {};
   var page   = params.page || "";
 
-  // Rota explícita para aprovação
+  // Rota verificação de hash
+  if (page === "verify") return doGetVerificacao(e);
+
+  // Rota aprovação
   if (page === "aprovacao" || params.acao || params.mes || params.ano) {
     return doGetAprovacao(e);
   }
 
   // Rota QR Code
   var equipamentoId = params.id || "";
-if (!equipamentoId) {
-  return HtmlService.createHtmlOutput(
-    "<h2>Acesso direto não permitido</h2>" +
-    "<p>Use o QR Code afixado no equipamento ou acesse " +
-    "<a href='" + CONFIG.urlAprovacao + "?page=aprovacao'>a página de aprovação</a>.</p>"
-  );
-}
+  if (!equipamentoId) {
+    return HtmlService.createHtmlOutput(
+      "<h2>Acesso direto não permitido</h2>" +
+      "<p>Use o QR Code afixado no equipamento ou acesse " +
+      "<a href='" + CONFIG.urlAprovacao + "?page=aprovacao'>a página de aprovação</a>.</p>"
+    );
+  }
   if (CONFIG.equipamentosValidos.indexOf(equipamentoId) === -1) {
     return paginaErro(equipamentoId);
   }
@@ -59,6 +62,116 @@ if (!equipamentoId) {
     + "&entry." + CONFIG.entries.hora + "=" + encodeURIComponent(horaFormatada);
   registrarLog(equipamentoId, dataFormatada, horaFormatada);
   return paginaConfirmacao(urlFinal, equipamentoId, horaFormatada);
+}
+
+function doGetVerificacao(e) {
+  var params = e ? e.parameter : {};
+  var hash   = params.hash || "";
+  var cod    = params.cod  || "";
+  var mes    = parseInt(params.mes)  || 0;
+  var ano    = parseInt(params.ano)  || 0;
+
+  // Parâmetros obrigatórios
+  if (!hash || !cod || !mes || !ano) {
+    return HtmlService.createHtmlOutput(
+      "<h2 style='color:red'>QR Code inválido</h2>" +
+      "<p>Parâmetros de verificação ausentes.</p>"
+    ).setTitle("Verificação — Docefruta");
+  }
+
+  var mesFormatado = mes < 10 ? "0" + mes : String(mes);
+  var nomeMes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+    "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][mes - 1];
+
+  // Busca na LOG_INTEGRIDADE
+  var ss       = SpreadsheetApp.openById(CONFIG.planilhaId);
+  var abaLog   = ss.getSheetByName(ABA_LOG_INTEGRIDADE);
+  var logDados = abaLog.getDataRange().getValues();
+  var registro = null;
+
+  for (var i = 1; i < logDados.length; i++) {
+    var mesAnoCell = logDados[i][2];
+    var mesAnoStr  = (mesAnoCell instanceof Date)
+      ? Utilities.formatDate(mesAnoCell, CONFIG.fusoHorario, "MM/yyyy")
+      : String(mesAnoCell).trim();
+    if (logDados[i][4] === hash &&
+        String(logDados[i][3]).trim() === cod &&
+        mesAnoStr === mesFormatado + "/" + ano) {
+      registro = logDados[i];
+      break;
+    }
+  }
+
+  // Busca local do equipamento
+  var localEquip = "";
+  var abaEquip   = ss.getSheetByName("Lista de Equips.");
+  if (abaEquip) {
+    var equips = abaEquip.getDataRange().getValues();
+    for (var j = 1; j < equips.length; j++) {
+      if (equips[j][0] === cod) { localEquip = equips[j][1]; break; }
+    }
+  }
+
+  // Monta página de resultado
+  var autêntico  = registro !== null;
+  var aprovado   = autêntico && registro[8] === true;
+  var corStatus  = autêntico ? "#2e7d32" : "#c62828";
+  var iconStatus = autêntico ? "✅" : "❌";
+  var txtStatus  = autêntico ? "DOCUMENTO AUTÊNTICO" : "DOCUMENTO NÃO VERIFICADO";
+
+  var blocoRegistro = autêntico ? (
+    '<table style="width:100%;border-collapse:collapse;margin-top:16px;">' +
+    '<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5;width:36%;">Arquivo</td>' +
+    '<td style="padding:6px 10px;border:1px solid #ddd;">' + registro[1] + '</td></tr>' +
+    '<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5;">Equipamento</td>' +
+    '<td style="padding:6px 10px;border:1px solid #ddd;">' + cod + (localEquip ? ' — ' + localEquip : '') + '</td></tr>' +
+    '<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5;">Período</td>' +
+    '<td style="padding:6px 10px;border:1px solid #ddd;">' + nomeMes + ' de ' + ano + '</td></tr>' +
+    '<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5;">Data de geração</td>' +
+    '<td style="padding:6px 10px;border:1px solid #ddd;">' + Utilities.formatDate(new Date(registro[0]), CONFIG.fusoHorario, "dd/MM/yyyy 'às' HH:mm:ss") + '</td></tr>' +
+    '<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5;">Gerado por</td>' +
+    '<td style="padding:6px 10px;border:1px solid #ddd;">' + CONFIG.responsavelNome + '</td></tr>' +
+    '<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5;">Tamanho</td>' +
+    '<td style="padding:6px 10px;border:1px solid #ddd;">' + registro[5] + ' bytes</td></tr>' +
+    '<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5;">Hash SHA-256</td>' +
+    '<td style="padding:6px 10px;border:1px solid #ddd;font-family:monospace;font-size:10px;word-break:break-all;">' + hash + '</td></tr>' +
+    '<tr><td style="padding:6px 10px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5;">Aprovação PCQI</td>' +
+    '<td style="padding:6px 10px;border:1px solid #ddd;">' +
+      (aprovado
+        ? '<span style="color:#2e7d32;font-weight:bold;">✔ Aprovado</span> — ' + registro[9] + ' por ' + CONFIG.responsavelNome
+        : '<span style="color:#e65100;">⏳ Pendente de aprovação</span>') +
+    '</td></tr>' +
+    '</table>'
+  ) : (
+    '<p style="color:#555;margin-top:16px;">O hash informado não foi encontrado nos registros do sistema. ' +
+    'O documento pode ter sido adulterado ou o QR Code é inválido.</p>'
+  );
+
+  var html =
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<style>' +
+    'body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#f5f5f5;color:#222;font-size:13px;}' +
+    '.card{background:white;border-radius:10px;padding:24px;max-width:640px;margin:0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.1);}' +
+    '.header{border-bottom:2px solid ' + corStatus + ';padding-bottom:12px;margin-bottom:16px;}' +
+    '.logo{font-size:20px;font-weight:bold;color:#2e7d32;letter-spacing:2px;}' +
+    '.status{font-size:22px;font-weight:bold;color:' + corStatus + ';margin:12px 0 4px;}' +
+    '.rodape{margin-top:20px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #eee;padding-top:10px;}' +
+    '</style></head><body><div class="card">' +
+    '<div class="header">' +
+    '<div class="logo">DOCEFRUTA</div>' +
+    '<div style="font-size:11px;color:#666;">' + CONFIG.empresa + '</div>' +
+    '</div>' +
+    '<div class="status">' + iconStatus + ' ' + txtStatus + '</div>' +
+    '<div style="font-size:11px;color:#666;">Verificação realizada em: ' +
+    Utilities.formatDate(new Date(), CONFIG.fusoHorario, "dd/MM/yyyy 'às' HH:mm:ss") + '</div>' +
+    blocoRegistro +
+    '<div class="rodape">Sistema de Monitoramento Ambiental — Docefruta | Verificação SHA-256</div>' +
+    '</div></body></html>';
+
+  return HtmlService.createHtmlOutput(html)
+    .setTitle("Verificação de Autenticidade — Docefruta")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 // ============================================================
@@ -208,9 +321,105 @@ function gerarPDFsMensais() {
     }
   }
 
+function notificarAprovacao_(mes, ano, gerados, erros) {
+  var nomeMes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+    "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][mes - 1];
+  var urlAprovacao = CONFIG.urlAprovacao + "?page=aprovacao";
+  var dataHoje = Utilities.formatDate(new Date(), CONFIG.fusoHorario, "dd/MM/yyyy");
+
+  var msg = "✅ Docefruta | Monitoramento Ambiental\n"
+    + gerados + " relatórios de " + nomeMes + "/" + ano + " gerados.\n\n"
+    + "Acesse para aprovação:\n" + urlAprovacao
+    + (erros.length > 0 ? "\n\n⚠️ Erros: " + erros.join(", ") : "");
+
+  // E-mail
+  var corpo = "<p>Olá, Yuri.</p>"
+    + "<p><strong>" + gerados + " relatórios de " + nomeMes + " de " + ano
+    + "</strong> foram gerados e aguardam sua aprovação como PCQI.</p>"
+    + "<p><a href='" + urlAprovacao + "' style='background:#2e7d32;color:white;"
+    + "padding:10px 20px;text-decoration:none;border-radius:6px;display:inline-block;'>"
+    + "Acessar página de aprovação</a></p>"
+    + (erros.length > 0 ? "<p>⚠️ Equipamentos com erro: " + erros.join(", ") + "</p>" : "")
+    + "<br><p><i>Sistema de Monitoramento Ambiental — Docefruta</i></p>";
+
+  try {
+    GmailApp.sendEmail(
+      CONFIG.responsavelEmail,
+      "✅ [Monitoramento] Relatórios de " + nomeMes + "/" + ano + " prontos para aprovação",
+      msg,
+      { htmlBody: corpo }
+    );
+    Logger.log("✅ E-mail de notificação enviado.");
+  } catch(e) {
+    Logger.log("❌ Erro e-mail notificação: " + e.message);
+  }
+
+  // WhatsApp
+  try {
+    var url = "https://api.callmebot.com/whatsapp.php"
+      + "?phone="  + ALERTA.whatsappNumero
+      + "&text="   + encodeURIComponent(msg)
+      + "&apikey=" + ALERTA.whatsappApiKey;
+    UrlFetchApp.fetch(url);
+    Logger.log("✅ WhatsApp de notificação enviado.");
+  } catch(e) {
+    Logger.log("❌ Erro WhatsApp notificação: " + e.message);
+  }
+}
+
   aba.getRange(CELULA_COD).setValue(EQUIPAMENTOS_PDF[0]);
   Logger.log("=== RESULTADO: " + gerados + "/10 PDFs gerados ===");
   if (erros.length > 0) Logger.log("Erros: " + erros.join(" | "));
+
+  // Notifica responsável para aprovação
+  if (gerados > 0) notificarAprovacao_(mes, ano, gerados, erros);
+}
+
+function notificarAprovacao_(mes, ano, gerados, erros) {
+  var nomeMes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+    "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][mes - 1];
+  var urlAprovacao = "https://script.google.com/macros/s/YOUR_WEBAPP_URL_QR?page=aprovacao";
+
+  var msg = "✅ Docefruta | Monitoramento Ambiental\n"
+    + gerados + " relatórios de " + nomeMes + "/" + ano + " gerados.\n\n"
+    + "Acesse para aprovação:\n" + urlAprovacao
+    + (erros.length > 0 ? "\n\n⚠️ Erros: " + erros.join(", ") : "");
+
+  var corpo = "<p>Olá, Yuri.</p>"
+    + "<p><strong>" + gerados + " relatórios de " + nomeMes + " de " + ano
+    + "</strong> foram gerados e aguardam sua aprovação como PCQI.</p>"
+    + "<p><a href='" + urlAprovacao + "' style='background:#2e7d32;color:white;"
+    + "padding:10px 20px;text-decoration:none;border-radius:6px;display:inline-block;'>"
+    + "Acessar página de aprovação</a></p>"
+    + (erros.length > 0 ? "<p>⚠️ Equipamentos com erro: " + erros.join(", ") + "</p>" : "")
+    + "<br><p><i>Sistema de Monitoramento Ambiental — Docefruta</i></p>";
+
+  try {
+    GmailApp.sendEmail(
+      CONFIG.responsavelEmail,
+      "✅ [Monitoramento] Relatórios de " + nomeMes + "/" + ano + " prontos para aprovação",
+      msg,
+      { htmlBody: corpo }
+    );
+    Logger.log("✅ E-mail de notificação enviado.");
+  } catch(e) {
+    Logger.log("❌ Erro e-mail notificação: " + e.message);
+  }
+
+  try {
+    var url = "https://api.callmebot.com/whatsapp.php"
+      + "?phone="  + ALERTA.whatsappNumero
+      + "&text="   + encodeURIComponent(msg)
+      + "&apikey=" + ALERTA.whatsappApiKey;
+    UrlFetchApp.fetch(url);
+    Logger.log("✅ WhatsApp de notificação enviado.");
+  } catch(e) {
+    Logger.log("❌ Erro WhatsApp notificação: " + e.message);
+  }
+}
+
+function testeNotificacaoAprovacao() {
+  notificarAprovacao_(4, 2026, 10, []);
 }
 
 // ============================================================
@@ -545,6 +754,11 @@ function garantirAbaRaw_(ss) {
   return aba;
 }
 
+function normalizarDecimal_(val) {
+  if (!val) return "";
+  return String(val).trim().replace(".", ",");
+}
+
 function onFormSubmit(e) {
   try {
     var ss     = SpreadsheetApp.openById(CONFIG.planilhaId);
@@ -554,10 +768,10 @@ function onFormSubmit(e) {
     var deviceId       = vals[1] ? vals[1].toString().trim() : "";
     var dataMedicao    = vals[2] ? vals[2].toString() : "";
     var horaMedicao    = vals[3] ? vals[3].toString().substring(0, 5) : "";
-    var tempAtual      = vals[4] || "";
-    var tempMax        = vals[5] || "";
-    var tempMin        = vals[6] || "";
-    var umidade        = vals[7] || "";
+    var tempAtual      = normalizarDecimal_(vals[4]);
+    var tempMax        = normalizarDecimal_(vals[5]);
+    var tempMin        = normalizarDecimal_(vals[6]);
+    var umidade        = normalizarDecimal_(vals[7]);
     var responsavel    = vals[8] || "";
     var observacoes    = vals[9] || "";
     if (dataMedicao.indexOf("-") !== -1) {
@@ -942,7 +1156,13 @@ function gerarPdfCertificado_(nomeArquivo, hash, mes, ano, cod, tamanho, aprovad
     "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][mes - 1];
   var dataGeracao = Utilities.formatDate(new Date(), CONFIG.fusoHorario, "dd/MM/yyyy 'às' HH:mm:ss");
   var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=90x90&data="
-    + encodeURIComponent("https://emn178.github.io/online-tools/sha256_checksum.html");
+  + encodeURIComponent(
+      "https://script.google.com/macros/s/YOUR_WEBAPP_URL_QR"
+      + "?page=verify&hash=" + hash
+      + "&cod=" + cod
+      + "&mes=" + mes
+      + "&ano=" + ano
+    );
 
   var assinaturaBase64 = "";
   try {
