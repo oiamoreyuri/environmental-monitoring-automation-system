@@ -1,90 +1,85 @@
 # Operational Screenshots
 
-This section presents generalized and anonymized visual examples related to the operational monitoring workflow.
-
-Sensitive operational information and internal company identifiers were intentionally omitted for privacy and compliance reasons.
+All screenshots and photos in this section are from the live production system. Sensitive identifiers have been anonymized where applicable.
 
 ---
 
-## QR Code Identification Workflow
+## 1. Equipment with QR Code Label
 
-Example of QR-based equipment identification used during operational monitoring routines.
+Monitoring equipment installed in a production area, with the ZPL-printed identification label below. The label was generated programmatically and printed directly via Zebra Setup Utilities using native ZPL commands — no image conversion required.
 
-Suggested image:
+![Equipment with QR code label](images/equipment-qr-label.jpg)
 
-- monitoring equipment with QR code label
-- anonymized equipment identification
-- operational environment example
+---
 
-Image placeholder:
+## 2. QR Code Scan Confirmation
 
-```text
-docs/images/qr-workflow-example.png
+After scanning the QR code, the operator sees a confirmation screen showing the equipment ID and scan timestamp. Tapping "Abrir Formulário" opens the pre-filled Google Form.
 
-Digital Monitoring Form
+![QR scan confirmation screen](images/qr-confirmation.png)
 
-Example of the operational monitoring form used during environmental data collection.
+---
 
-Important characteristics:
+## 3. Pre-filled Google Form
 
-pre-configured metadata
-simplified operational workflow
-standardized data entry
-traceability-oriented structure
+The monitoring form opens with equipment ID, date, and time already populated from the QR code URL parameters. The operator only needs to enter temperature and humidity readings, responsible name, and any observations.
 
-Image placeholder:
-docs/images/digital-form-example.png
+![Pre-filled Google Form](images/prefilled-form.png)
 
-Cloud Data Storage Structure
+---
 
-Example of centralized monitoring records stored in cloud spreadsheets.
+## 4. RAW_DATA Storage Layer
 
-Important aspects:
+The RAW_DATA sheet stores every submitted record with a fixed 12-column schema. Each row is written by the `onFormSubmit` trigger, with decimal normalization and timestamp processing applied before storage.
 
-timestamp traceability
-standardized records
-equipment identification
-operational consistency
+![RAW_DATA schema and records](images/raw-data-schema.png)
 
-Image placeholder:
-docs/images/cloud-records-example.png
+---
 
-ETL Processing Example
+## 5. Monthly Monitoring Report
 
-Example of backend processing routines used for operational data cleaning and consolidation.
+The monthly report sheet pulls data dynamically from RAW_DATA using FILTER formulas indexed by equipment ID, month, year, and shift. Weekends are identified automatically. The sheet is exported as a PDF on the last business day of each month.
 
-Suggested content:
+![Monthly monitoring report](images/monthly-report.png)
 
-sanitized Python snippets
-data cleaning examples
-trend processing logic
+---
 
-Image placeholder:
-docs/images/etl-processing-example.png
+## 6. Digital Approval Workflow
 
-Operational Trend Analysis
+The approval interface lists all 10 equipment stations with links to their PDF reports and real-time approval status. The PCQI reviews each report and approves directly in the browser. Approval timestamps are recorded to the second.
 
-Example of operational trend visualization generated from processed monitoring data.
+![Digital approval workflow](images/approval-workflow.png)
 
-Possible examples:
+---
 
-temperature trends
-environmental monitoring curves
-anomaly visualization
-operational indicators
+## 7. Approval Certificate
 
-Image placeholder:
-docs/images/trend-analysis-example.png
+Each approved report generates a tamper-evident certificate containing the document metadata, SHA-256 hash, verification QR code, and approval block with the PCQI's signature and timestamp.
 
-Audit-oriented Records
+![Approval certificate - document details and hash](images/certificate-1.png)
 
-Example of organized monitoring records prepared for audit verification and operational traceability review.
+![Approval certificate - approval block with signature](images/certificate-2.png)
 
-Suggested content:
+---
 
-timestamp visibility
-traceability consistency
-standardized operational records
+## 8. Hash Verification Page
 
-Image placeholder:
-docs/images/audit-records-example.png
+Scanning the QR code on any certificate opens a live verification page that queries LOG_INTEGRIDADE and confirms document authenticity in real time. The page displays the full record details including generation timestamp, file size, hash, and approval status.
+
+![Hash verification page](images/hash-verification.png)
+
+---
+
+## System Flow Summary
+
+```
+Equipment QR scan (photo 1)
+    → Confirmation screen (screenshot 2)
+    → Pre-filled form submission (screenshot 3)
+    → RAW_DATA ingestion (screenshot 4)
+    → Monthly report generation (screenshot 5)
+    → Digital approval (screenshot 6)
+    → Tamper-evident certificate (screenshots 7a, 7b)
+    → Live hash verification (screenshot 8)
+```
+
