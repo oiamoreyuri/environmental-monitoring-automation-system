@@ -4,39 +4,179 @@
   <meta charset="UTF-8">
   <style>
     body{font-family:Arial,sans-serif;margin:24px;color:#222;font-size:13px;}
-    h1{color:#2e7d32;font-size:16px;}
-    table{width:100%;border-collapse:collapse;margin-top:16px;}
-    th{background:#2e7d32;color:white;padding:8px 12px;text-align:left;font-size:12px;}
+    h1{color:#2e7d32;font-size:16px;margin-bottom:4px;}
+    .subtitulo{color:#666;font-size:12px;margin-bottom:20px;}
+
+    /* Seletor de período */
+    .periodo{
+      display:flex;align-items:center;gap:12px;
+      background:#f5f5f5;border:1px solid #ddd;
+      border-radius:8px;padding:12px 16px;
+      margin-bottom:20px;width:fit-content;
+    }
+    .periodo label{font-weight:bold;font-size:12px;color:#555;}
+    .periodo select{
+      padding:6px 10px;border:1px solid #ccc;border-radius:4px;
+      font-size:13px;background:white;cursor:pointer;
+      color:#222;
+    }
+    .periodo select:focus{outline:2px solid #2e7d32;border-color:#2e7d32;}
+
+    /* Tabela */
+    table{width:100%;border-collapse:collapse;margin-top:4px;}
+    th{background:#2e7d32;color:white;padding:8px 12px;
+       text-align:left;font-size:12px;}
     td{padding:8px 12px;border-bottom:1px solid #eee;vertical-align:middle;}
     tr:hover td{background:#f9f9f9;}
-    .btn{background:#2e7d32;color:white;padding:4px 12px;border-radius:4px;border:none;cursor:pointer;font-size:11px;}
-    .btn:disabled{background:#aaa;}
+    .btn{background:#2e7d32;color:white;padding:4px 12px;
+         border-radius:4px;border:none;cursor:pointer;font-size:11px;}
+    .btn:disabled{background:#aaa;cursor:not-allowed;}
+
+    /* Loading */
+    .loading{color:#888;font-size:12px;font-style:italic;padding:16px 0;}
+    #msg{color:#2e7d32;font-weight:bold;display:none;margin-top:12px;}
+    .rodape{font-size:10px;color:#aaa;margin-top:24px;}
   </style>
 </head>
 <body>
-  <h1>Aprovação de Relatórios — <?= nomeMes ?> de <?= ano ?></h1>
-  <p style="color:#666;font-size:12px;">Abra cada PDF, revise o conteúdo e clique em Aprovar para registrar sua análise crítica como PCQI.</p>
-  <table>
-    <tr><th>Equipamento</th><th>Local</th><th>Relatório</th><th>Status</th><th>Ação</th></tr>
-    <?!= linhas ?>
-  </table>
-  <p id="msg" style="color:#2e7d32;font-weight:bold;display:none;">✔ Aprovado com sucesso!</p>
-  <p style="font-size:10px;color:#aaa;margin-top:24px;"><?= empresa ?></p>
+
+  <h1>Aprovação de Relatórios Mensais</h1>
+  <p class="subtitulo">
+    Selecione o período, abra cada PDF, revise o conteúdo e clique em
+    Aprovar para registrar sua análise crítica como PCQI.
+  </p>
+
+  <!-- Seletor de período -->
+  <div class="periodo">
+    <label>Mês</label>
+    <select id="selMes">
+      <option value="1">Janeiro</option>
+      <option value="2">Fevereiro</option>
+      <option value="3">Março</option>
+      <option value="4">Abril</option>
+      <option value="5">Maio</option>
+      <option value="6">Junho</option>
+      <option value="7">Julho</option>
+      <option value="8">Agosto</option>
+      <option value="9">Setembro</option>
+      <option value="10">Outubro</option>
+      <option value="11">Novembro</option>
+      <option value="12">Dezembro</option>
+    </select>
+    <label>Ano</label>
+    <select id="selAno">
+      <option>Carregando...</option>
+    </select>
+  </div>
+
+  <!-- Tabela de relatórios -->
+  <div id="conteudo">
+    <p class="loading">Carregando relatórios...</p>
+  </div>
+
+  <p id="msg">✔ Aprovado com sucesso!</p>
+  <p class="rodape" id="rodape"></p>
 
   <script>
+    var MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+                 "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+    // ------------------------------------------------------------
+    // Inicialização: carrega anos disponíveis da LOG_INTEGRIDADE,
+    // pré-seleciona mês/ano atual e carrega a tabela.
+    // ------------------------------------------------------------
+    (function init() {
+      var agora = new Date();
+      var mesAtual = agora.getMonth() + 1;
+      var anoAtual = agora.getFullYear();
+
+      // Pré-seleciona o mês atual
+      document.getElementById("selMes").value = mesAtual;
+
+      // Busca anos disponíveis no servidor
+      google.script.run
+        .withSuccessHandler(function(anos) {
+          var sel = document.getElementById("selAno");
+          sel.innerHTML = "";
+
+          if (!anos || anos.length === 0) {
+            sel.innerHTML = "<option value='" + anoAtual + "'>" + anoAtual + "</option>";
+          } else {
+            anos.forEach(function(ano) {
+              var opt = document.createElement("option");
+              opt.value = ano;
+              opt.textContent = ano;
+              if (ano === anoAtual) opt.selected = true;
+              sel.appendChild(opt);
+            });
+            // Se ano atual não estiver na lista, seleciona o primeiro
+            if (!sel.value) sel.selectedIndex = 0;
+          }
+
+          // Carrega tabela com o período selecionado
+          carregarTabela();
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById("selAno").innerHTML =
+            "<option value='" + anoAtual + "'>" + anoAtual + "</option>";
+          carregarTabela();
+        })
+        .buscarAnosDisponiveis();
+
+      // Listeners de mudança automática
+      document.getElementById("selMes").addEventListener("change", carregarTabela);
+      document.getElementById("selAno").addEventListener("change", carregarTabela);
+    })();
+
+    // ------------------------------------------------------------
+    // carregarTabela()
+    // Chama paginaListaAprovacao_ no servidor e renderiza
+    // o HTML retornado na div #conteudo.
+    // ------------------------------------------------------------
+    function carregarTabela() {
+      var mes = parseInt(document.getElementById("selMes").value);
+      var ano = parseInt(document.getElementById("selAno").value);
+
+      document.getElementById("conteudo").innerHTML =
+        "<p class='loading'>Carregando relatórios de " +
+        MESES[mes - 1] + " de " + ano + "...</p>";
+      document.getElementById("msg").style.display = "none";
+
+      google.script.run
+        .withSuccessHandler(function(html) {
+          document.getElementById("conteudo").innerHTML = html;
+          document.getElementById("rodape").textContent =
+            "Período: " + MESES[mes - 1] + " de " + ano +
+            " | <?= empresa ?>";
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById("conteudo").innerHTML =
+            "<p style='color:red'>Erro ao carregar: " + err.message + "</p>";
+        })
+        .carregarTabelaAprovacao(mes, ano);
+    }
+
+    // ------------------------------------------------------------
+    // aprovar(cod, mes, ano, btn)
+    // Chama aprovarRelatorio no servidor e atualiza a linha
+    // da tabela sem recarregar a página.
+    // ------------------------------------------------------------
     function aprovar(cod, mes, ano, btn) {
       btn.disabled = true;
       btn.textContent = "Aguarde...";
       google.script.run
         .withSuccessHandler(function(ok) {
           if (ok) {
-            btn.closest('tr').querySelector('td:nth-child(4)').innerHTML =
-              '<span style="color:#2e7d32;font-weight:bold;">✔ Aprovado</span>';
-            btn.closest('td').innerHTML = '<span style="color:#aaa;font-size:11px;">—</span>';
+            var tr = btn.closest("tr");
+            tr.querySelector("td:nth-child(4)").innerHTML =
+              "<span style='color:#2e7d32;font-weight:bold;'>✔ Aprovado</span>";
+            btn.closest("td").innerHTML =
+              "<span style='color:#aaa;font-size:11px;'>—</span>";
+            document.getElementById("msg").style.display = "block";
           } else {
             btn.disabled = false;
             btn.textContent = "Aprovar";
-            alert("Erro ao aprovar. Tente novamente.");
+            alert("Erro ao aprovar. Verifique o log do Apps Script.");
           }
         })
         .withFailureHandler(function(err) {

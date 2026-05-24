@@ -494,3 +494,126 @@ function montarTabelaVerificacao_(registro, cod, localEquip, hash, aprovado, nom
       : '<span style="color:#e65100;">⏳ Pendente de aprovação</span>') +
     '</table>';
 }
+
+// ------------------------------------------------------------
+// buscarAnosDisponiveis()
+// Retorna array de anos únicos com registros na LOG_INTEGRIDADE,
+// ordenados do mais recente para o mais antigo.
+// Chamada pelo cliente via google.script.run para popular
+// o seletor de ano na página de aprovação.
+// ------------------------------------------------------------
+function buscarAnosDisponiveis() {
+  var ss     = SpreadsheetApp.openById(CONFIG.planilhaId);
+  var abaLog = ss.getSheetByName(ABA_LOG_INTEGRIDADE);
+  if (!abaLog) return [];
+
+  var dados = abaLog.getDataRange().getValues();
+  var anos  = {};
+
+  for (var i = 1; i < dados.length; i++) {
+    if (!dados[i][1]) continue;
+    var mesAno = dados[i][2];
+    var str = (mesAno instanceof Date)
+      ? Utilities.formatDate(mesAno, CONFIG.fusoHorario, "MM/yyyy")
+      : String(mesAno).trim();
+    // Extrai o ano da string "MM/yyyy"
+    var partes = str.split("/");
+    if (partes.length === 2 && partes[1]) {
+      anos[partes[1]] = true;
+    }
+  }
+
+  return Object.keys(anos).map(Number).sort(function(a, b) {
+    return b - a; // mais recente primeiro
+  });
+}
+
+// ------------------------------------------------------------
+// carregarTabelaAprovacao(mes, ano)
+// Retorna o HTML da tabela de relatórios para o período
+// solicitado. Chamada pelo cliente via google.script.run
+// para atualizar a tabela sem recarregar a página inteira.
+// ------------------------------------------------------------
+function carregarTabelaAprovacao(mes, ano) {
+  var ss  = SpreadsheetApp.openById(CONFIG.planilhaId);
+  var mf  = mesFormatado_(mes);
+  var chave = chaveMesAno_(mes, ano);
+
+  // Lê status de aprovação da LOG_INTEGRIDADE
+  var aprovados = {};
+  var abaLog    = ss.getSheetByName(ABA_LOG_INTEGRIDADE);
+  if (abaLog) {
+    var logDados = abaLog.getDataRange().getValues();
+    for (var i = 1; i < logDados.length; i++) {
+      var mesAnoCell = logDados[i][2];
+      var mesAnoStr  = (mesAnoCell instanceof Date)
+        ? Utilities.formatDate(mesAnoCell, CONFIG.fusoHorario, "MM/yyyy")
+        : String(mesAnoCell).trim();
+      if (mesAnoStr === chave) {
+        aprovados[logDados[i][3]] = {
+          aprovado:      logDados[i][8] === true,
+          dataAprovacao: logDados[i][9] || ""
+        };
+      }
+    }
+  }
+
+  // Lê URLs dos PDFs na subpasta do mês
+  var urlsRelatorios = {};
+  try {
+    var pasta    = localizarOuCriarSubpasta_(mes, ano);
+    var arquivos = pasta.getFiles();
+    while (arquivos.hasNext()) {
+      var arq  = arquivos.next();
+      var nome = arq.getName();
+      if (nome.indexOf("_Monitoramento.pdf") !== -1) {
+        var cod = nome
+          .replace(ano + "-" + mf + "_", "")
+          .replace("_Monitoramento.pdf", "");
+        urlsRelatorios[cod] = arq.getUrl();
+      }
+    }
+  } catch (err) {
+    Logger.log("⚠️ Erro ao listar PDFs: " + err.message);
+  }
+
+  // Lê locais dos equipamentos
+  var locais   = {};
+  var abaEquip = ss.getSheetByName("Lista de Equips.");
+  if (abaEquip) {
+    var equips = abaEquip.getDataRange().getValues();
+    for (var j = 1; j < equips.length; j++) {
+      locais[equips[j][0]] = equips[j][1] || "";
+    }
+  }
+
+  // Monta HTML da tabela
+  var html = '<table>'
+    + '<tr><th>Equipamento</th><th>Local</th><th>Relatório</th>'
+    + '<th>Status</th><th>Ação</th></tr>';
+
+  for (var k = 0; k < EQUIPAMENTOS_PDF.length; k++) {
+    var c      = EQUIPAMENTOS_PDF[k];
+    var status = aprovados[c] || { aprovado: false, dataAprovacao: "" };
+    var urlRel = urlsRelatorios[c] || "";
+    html +=
+      '<tr>' +
+      '<td>' + c + '</td>' +
+      '<td>' + (locais[c] || "") + '</td>' +
+      '<td>' + (urlRel
+        ? '<a href="' + urlRel + '" target="_blank">📄 Abrir PDF</a>'
+        : '<span style="color:#aaa;">—</span>') + '</td>' +
+      '<td>' + (status.aprovado
+        ? '<span style="color:#2e7d32;font-weight:bold;">✔ Aprovado</span>' +
+          '<br><small>' + status.dataAprovacao + '</small>'
+        : '<span style="color:#e65100;">⏳ Pendente</span>') + '</td>' +
+      '<td>' + (status.aprovado
+        ? '<span style="color:#aaa;font-size:11px;">—</span>'
+        : '<button class="btn" onclick="aprovar(\'' + c + '\',' +
+          mes + ',' + ano + ',this)">Aprovar</button>') +
+      '</td></tr>';
+  }
+
+  html += '</table>';
+  return html;
+}
