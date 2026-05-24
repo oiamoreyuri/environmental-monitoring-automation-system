@@ -1,7 +1,3 @@
-> **[PT-BR]** Sistema operacional de monitoramento ambiental desenvolvido e implantado em indústria alimentícia certificada FSSC 22000. Substitui processo manual em papel por fluxo digital integrado — da coleta via QR Code até aprovação e verificação de integridade dos registros mensais. Stack: Google Apps Script, JavaScript, ZPL, Git/GitHub.
-
----
-
 # Environmental Monitoring Automation System
 
 Operational system for environmental monitoring of temperature and humidity in a regulated food manufacturing facility certified under **FSSC 22000**.
