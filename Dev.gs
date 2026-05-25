@@ -42,7 +42,7 @@ function executarTestesUnitarios() {
     if (config) {
       assert(config.tempMin === 34 && config.tempMax === 36, "COD-1185 deve possuir faixa 34°C - 36°C.");
       assert(config.semUmidade === true, "COD-1185 não deve ter higrômetro (semUmidade = true).");
-      assert(config.documento === "FOR.PS.LAB. 03-02", "COD-1185 deve apontar para o documento FOR.PS.LAB. 03-02.");
+      assert(config.documento === "FOR.OS.LAB. 03-02", "COD-1185 deve apontar para o documento FOR.OS.LAB. 03-02.");
     }
   } catch (err) {
     assert(false, "Erro ao testar COD-1185: " + err.message);
@@ -342,13 +342,13 @@ function criarAbaSettings() {
   // Dados dos equipamentos novos do laboratório (somente temperatura, SEM umidade)
   // Deixaremos TEMP_MIN e TEMP_MAX como vazios ou placeholders até confirmação
   var equipsLab = [
-    { cod: "COD-1185", nome: "Estufa Mesófilos", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 34, tempMax: 36 },
-    { cod: "COD-1183", nome: "Estufa Bolores e Leveduras", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 24, tempMax: 26 },
-    { cod: "COD-1184", nome: "Estufa Entero/Staph/E.coli", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 34, tempMax: 36 },
-    { cod: "COD-1181", nome: "Estufa Salmonella", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 40.5, tempMax: 42.5 },
-    { cod: "COD-1182", nome: "Estufa Coliformes termotolerantes", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 44, tempMax: 46 },
-    { cod: "COD-1130", nome: "Geladeira Microbiologia", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 2, tempMax: 8 },
-    { cod: "COD-1131", nome: "Ar Ambiente Microbiologia", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 16, tempMax: 22 }
+    { cod: "COD-1185", nome: "Estufa Mesófilos", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 34, tempMax: 36 },
+    { cod: "COD-1183", nome: "Estufa Bolores e Leveduras", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 24, tempMax: 26 },
+    { cod: "COD-1184", nome: "Estufa Entero/Staph/E.coli", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 34, tempMax: 36 },
+    { cod: "COD-1181", nome: "Estufa Salmonella", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 40.5, tempMax: 42.5 },
+    { cod: "COD-1182", nome: "Estufa Coliformes termotolerantes", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 44, tempMax: 46 },
+    { cod: "COD-1130", nome: "Geladeira Microbiologia", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 2, tempMax: 8 },
+    { cod: "COD-1131", nome: "Ar Ambiente Microbiologia", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 16, tempMax: 22 }
   ];
   
   equipsLab.forEach(function(item) {
@@ -381,5 +381,71 @@ function criarAbaSettings() {
   aba.setColumnWidth(11, 250); // FORMS_ID
   
   Logger.log("✅ População da aba SETTINGS finalizada com sucesso!");
+  Logger.log("=== FIM DA EXECUÇÃO ===");
+}
+
+// ------------------------------------------------------------
+// atualizarSgsaqLabEDocumentos()
+// Atualiza a coluna DOCUMENTO na aba SETTINGS (de FOR.PS.LAB. 03-02 para FOR.OS.LAB. 03-02)
+// e torna a célula do código de documento na aba "Relatório Mensal" 100% dinâmica.
+// ------------------------------------------------------------
+function atualizarSgsaqLabEDocumentos() {
+  Logger.log("=== INICIANDO ATUALIZAÇÃO SGSAQ ===");
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.planilhaId);
+    
+    // 1. Atualizar a aba SETTINGS
+    var abaSettings = ss.getSheetByName("SETTINGS");
+    if (abaSettings) {
+      var range = abaSettings.getDataRange();
+      var valores = range.getValues();
+      var atualizados = 0;
+      for (var r = 1; r < valores.length; r++) {
+        var doc = String(valores[r][3] || "").trim();
+        var cod = String(valores[r][0] || "").trim();
+        if (doc === "FOR.PS.LAB. 03-02" || doc === "FOR.OS.LAB. 03-02" || cod.startsWith("COD-118") || cod.startsWith("COD-113")) {
+          abaSettings.getRange(r + 1, 4).setValue("FOR.OS.LAB. 03-02");
+          atualizados++;
+        }
+      }
+      Logger.log("✅ SETTINGS: " + atualizados + " linhas atualizadas para o documento 'FOR.OS.LAB. 03-02'.");
+    } else {
+      Logger.log("❌ Erro: Aba SETTINGS não encontrada!");
+    }
+    
+    // 2. Tornar o cabeçalho/célula de documento do Relatório Mensal 100% dinâmico
+    var abaRelatorio = ss.getSheetByName(ABA_RELATORIO);
+    if (abaRelatorio) {
+      var rangeRel = abaRelatorio.getDataRange();
+      var valoresRel = rangeRel.getValues();
+      var formulasRel = rangeRel.getFormulas();
+      var celulaEncontrada = null;
+      
+      for (var r = 0; r < valoresRel.length; r++) {
+        for (var c = 0; c < valoresRel[r].length; c++) {
+          var val = String(valoresRel[r][c]);
+          var form = String(formulasRel[r][c]);
+          if (val.indexOf("FOR.IT.PS.PRO. 08-04") !== -1 || form.indexOf("FOR.IT.PS.PRO. 08-04") !== -1) {
+            celulaEncontrada = abaRelatorio.getRange(r + 1, c + 1);
+            break;
+          }
+        }
+        if (celulaEncontrada) break;
+      }
+      
+      if (celulaEncontrada) {
+        // Define a fórmula dinâmica que lê da aba SETTINGS baseado no COD selecionado em B5
+        celulaEncontrada.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:D;4;FALSE);"FOR.IT.PS.PRO. 08-04")');
+        Logger.log("✅ RELATÓRIO MENSAL: Célula " + celulaEncontrada.getA1Notation() + " atualizada com a fórmula dinâmica de VLOOKUP.");
+      } else {
+        Logger.log("⚠️ Alerta: Célula com 'FOR.IT.PS.PRO. 08-04' não encontrada no Relatório Mensal para substituição automática.");
+      }
+    } else {
+      Logger.log("❌ Erro: Aba 'Relatório Mensal' não encontrada!");
+    }
+    
+  } catch (err) {
+    Logger.log("❌ Erro durante a atualização: " + err.message);
+  }
   Logger.log("=== FIM DA EXECUÇÃO ===");
 }
