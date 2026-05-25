@@ -289,7 +289,7 @@ function criarAbaSettings() {
   var headers = [
     "CODIGO", "NOME", "AREA", "DOCUMENTO", "SEM_UMIDADE",
     "TEMP_MIN", "TEMP_MAX", "UMID_MIN", "UMID_MAX", "ALERTA_ATIVO", "FORMS_ID",
-    "REVISAO", "VIGENCIA"
+    "REVISAO", "VIGENCIA", "TITULO_DOC"
   ];
   aba.clear();
   aba.appendRow(headers);
@@ -338,7 +338,8 @@ function criarAbaSettings() {
       item.alerta,    // ALERTA_ATIVO
       "",             // FORMS_ID
       "Rev. 00",      // REVISAO
-      "20/01/2026"    // VIGENCIA
+      "20/01/2026",   // VIGENCIA
+      "REGISTRO DE MONITORAMENTO DE TEMPERATURA E UMIDADE AMBIENTAL" // TITULO_DOC
     ]);
   });
   
@@ -368,7 +369,8 @@ function criarAbaSettings() {
       true,           // ALERTA_ATIVO
       "",             // FORMS_ID
       "Rev. 00",      // REVISAO
-      "25/05/2026"    // VIGENCIA
+      "25/05/2026",   // VIGENCIA
+      "REGISTRO DE MONITORAMENTO DE TEMPERATURA DE ESTUFAS E GELADEIRA" // TITULO_DOC
     ]);
   });
   
@@ -386,6 +388,7 @@ function criarAbaSettings() {
   aba.setColumnWidth(11, 250); // FORMS_ID
   aba.setColumnWidth(12, 100); // REVISAO
   aba.setColumnWidth(13, 110); // VIGENCIA
+  aba.setColumnWidth(14, 300); // TITULO_DOC
   
   Logger.log("✅ População da aba SETTINGS finalizada com sucesso!");
   Logger.log("=== FIM DA EXECUÇÃO ===");
@@ -407,8 +410,10 @@ function atualizarSgsaqLabEDocumentos() {
       // Garante os novos cabeçalhos
       abaSettings.getRange(1, 12).setValue("REVISAO");
       abaSettings.getRange(1, 13).setValue("VIGENCIA");
+      abaSettings.getRange(1, 14).setValue("TITULO_DOC");
       abaSettings.setColumnWidth(12, 100);
       abaSettings.setColumnWidth(13, 110);
+      abaSettings.setColumnWidth(14, 300);
       
       var range = abaSettings.getDataRange();
       var valores = range.getValues();
@@ -421,27 +426,55 @@ function atualizarSgsaqLabEDocumentos() {
           abaSettings.getRange(r + 1, 4).setValue("FOR.OS.LAB. 03-02"); // Col D
           abaSettings.getRange(r + 1, 12).setValue("Rev. 00");         // Col L
           abaSettings.getRange(r + 1, 13).setValue("25/05/2026");       // Col M
+          abaSettings.getRange(r + 1, 14).setValue("REGISTRO DE MONITORAMENTO DE TEMPERATURA DE ESTUFAS E GELADEIRA"); // Col N
           atualizados++;
         } else if (cod.startsWith("COD-10")) {
           // Equipamentos da produção
           abaSettings.getRange(r + 1, 4).setValue("FOR.IT.PS.PRO. 08-04"); // Col D
           abaSettings.getRange(r + 1, 12).setValue("Rev. 00");             // Col L
           abaSettings.getRange(r + 1, 13).setValue("20/01/2026");           // Col M
+          abaSettings.getRange(r + 1, 14).setValue("REGISTRO DE MONITORAMENTO DE TEMPERATURA E UMIDADE AMBIENTAL"); // Col N
           atualizados++;
         }
       }
-      Logger.log("✅ SETTINGS: " + atualizados + " linhas configuradas com DOCUMENTO, REVISAO e VIGENCIA.");
+      Logger.log("✅ SETTINGS: " + atualizados + " linhas configuradas com DOCUMENTO, REVISAO, VIGENCIA e TITULO_DOC.");
     } else {
       Logger.log("❌ Erro: Aba SETTINGS não encontrada!");
     }
     
-    // 2. Tornar o cabeçalho/célula de documento do Relatório Mensal 100% dinâmico
+    // 2. Tornar o cabeçalho/célula de documento do Relatório Mensal 100% dinâmico (com TEXT na data)
     var abaRelatorio = ss.getSheetByName(ABA_RELATORIO);
     if (abaRelatorio) {
-      var celula = abaRelatorio.getRange("I1");
-      // A fórmula puxa dinamicamente a Coluna D (4), Coluna L (12) e Coluna M (13) da SETTINGS
-      celula.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:M;4;FALSE) & CHAR(10) & VLOOKUP($B$5;SETTINGS!A:M;12;FALSE) & CHAR(10) & VLOOKUP($B$5;SETTINGS!A:M;13;FALSE); "FOR.IT.PS.PRO. 08-04" & CHAR(10) & "Rev. 00" & CHAR(10) & "20/01/2026")');
+      var celulaI1 = abaRelatorio.getRange("I1");
+      // A fórmula puxa dinamicamente a Coluna D (4), Coluna L (12) e Coluna M (13) da SETTINGS com TEXT() na data para evitar que vire número de série
+      celulaI1.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:N;4;FALSE) & CHAR(10) & VLOOKUP($B$5;SETTINGS!A:N;12;FALSE) & CHAR(10) & TEXT(VLOOKUP($B$5;SETTINGS!A:N;13;FALSE);"dd/mm/aaaa"); "FOR.IT.PS.PRO. 08-04" & CHAR(10) & "Rev. 00" & CHAR(10) & "20/01/2026")');
       Logger.log("✅ RELATÓRIO MENSAL: Célula I1 (mesclada I1:K3) configurada diretamente com a fórmula dinâmica multilinha vinculada ao SETTINGS.");
+      
+      // 3. Buscar e tornar o Título do Relatório Dinâmico
+      var rangeRel = abaRelatorio.getRange("A1:H10"); // O título costuma ficar nas primeiras colunas e linhas
+      var valoresRel = rangeRel.getValues();
+      var formulasRel = rangeRel.getFormulas();
+      var celulaTitulo = null;
+      
+      for (var r = 0; r < valoresRel.length; r++) {
+        for (var c = 0; c < valoresRel[r].length; c++) {
+          var val = String(valoresRel[r][c]).toUpperCase();
+          var form = String(formulasRel[r][c]).toUpperCase();
+          if ((val.indexOf("REGISTRO DE MONITORAMENTO") !== -1 || form.indexOf("REGISTRO DE MONITORAMENTO") !== -1) && 
+              (val.indexOf("TEMPERATURA") !== -1 || form.indexOf("TEMPERATURA") !== -1)) {
+            celulaTitulo = abaRelatorio.getRange(r + 1, c + 1);
+            break;
+          }
+        }
+        if (celulaTitulo) break;
+      }
+      
+      if (celulaTitulo) {
+        celulaTitulo.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:N;14;FALSE); "REGISTRO DE MONITORAMENTO DE TEMPERATURA E UMIDADE AMBIENTAL")');
+        Logger.log("✅ RELATÓRIO MENSAL: Título na célula " + celulaTitulo.getA1Notation() + " configurado com fórmula dinâmica do TITULO_DOC.");
+      } else {
+        Logger.log("⚠️ Alerta: Célula contendo o título do relatório (REGISTRO DE MONITORAMENTO...) não foi encontrada no intervalo A1:H10 para atualização automática.");
+      }
     } else {
       Logger.log("❌ Erro: Aba 'Relatório Mensal' não encontrada!");
     }
