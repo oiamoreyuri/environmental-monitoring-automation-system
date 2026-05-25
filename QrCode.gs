@@ -5,6 +5,12 @@
 // renderização da página de redirecionamento ao Forms.
 // ============================================================
 
+// Lista de equipamentos do laboratório de microbiologia que usam forms próprio (sem umidade)
+var EQUIPAMENTOS_LAB = [
+  "COD-0911","COD-0912","COD-0913",
+  "COD-0914","COD-0917","COD-1130","COD-1131"
+];
+
 // ------------------------------------------------------------
 // rotearQrCode_(equipamentoId)
 // Chamado por doGet (WebApp.gs) quando a rota contém ?id=.
@@ -20,13 +26,24 @@ function rotearQrCode_(equipamentoId) {
   var dataFormatada = Utilities.formatDate(agora, CONFIG.fusoHorario, "yyyy-MM-dd");
   var horaFormatada = Utilities.formatDate(agora, CONFIG.fusoHorario, "HH:mm");
 
+  // Roteamento inteligente de Forms:
+  // Decide entre as credenciais do laboratório ou da produção
+  var formUrl, entries;
+  if (EQUIPAMENTOS_LAB.indexOf(equipamentoId) !== -1) {
+    formUrl = CONFIG.formUrlLab;
+    entries = CONFIG.entriesLab;
+  } else {
+    formUrl = CONFIG.formUrl;
+    entries = CONFIG.entries;
+  }
+
   // Monta URL do Forms com campos pré-preenchidos:
   // equipamento, data e hora da leitura.
-  var urlFinal = CONFIG.formUrl
+  var urlFinal = formUrl
     + "?usp=pp_url"
-    + "&entry." + CONFIG.entries.id   + "=" + encodeURIComponent(equipamentoId)
-    + "&entry." + CONFIG.entries.data + "=" + encodeURIComponent(dataFormatada)
-    + "&entry." + CONFIG.entries.hora + "=" + encodeURIComponent(horaFormatada);
+    + "&entry." + entries.id   + "=" + encodeURIComponent(equipamentoId)
+    + "&entry." + entries.data + "=" + encodeURIComponent(dataFormatada)
+    + "&entry." + entries.hora + "=" + encodeURIComponent(horaFormatada);
 
   registrarAcessoQr_(equipamentoId, dataFormatada, horaFormatada);
 

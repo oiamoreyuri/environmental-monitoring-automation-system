@@ -4,6 +4,28 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-25 12:50] — Roteamento de Forms do Laboratório: Passo 3 (QrCode.gs)
+
+### 🎯 Objetivo da Alteração
+Implementar o redirecionamento inteligente na leitura do QR Code, enviando os equipamentos do laboratório para o novo formulário sem umidade e mantendo os de produção no formulário clássico.
+
+### 📝 Descrição Técnica das Alterações
+
+#### 1. Roteamento Inteligente em `QrCode.gs`
+*   **Arquivo Modificado**: [QrCode.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/QrCode.gs).
+*   **Definição de EQUIPAMENTOS_LAB**:
+    *   Mapeado o catálogo de códigos de laboratório no topo do módulo (`COD-0911` a `COD-1131`).
+*   **Refatoração de `rotearQrCode_`**:
+    *   Adicionada verificação de pertencimento ao laboratório.
+    *   Em caso positivo, o script monta a URL pré-preenchida dinâmica para o Forms usando `CONFIG.formUrlLab` e o objeto de campos `CONFIG.entriesLab` (IDs do novo form).
+    *   Caso contrário, utiliza as propriedades padrão de produção (`CONFIG.formUrl` e `CONFIG.entries`).
+    *   Os registros de auditoria em `LOG_ACESSO` e o processamento visual da página permanecem inalterados.
+
+### 🧪 Verificação e Validação
+*   **Sync**: Sincronizado e compilado com sucesso via `clasp push`.
+
+---
+
 ## [2026-05-25 12:45] — Roteamento de Forms do Laboratório: Passo 2 (Config.gs)
 
 ### 🎯 Objetivo da Alteração
