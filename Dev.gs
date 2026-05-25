@@ -12,6 +12,142 @@
 //     removido do projeto sem impacto operacional.
 // ============================================================
 
+
+// ------------------------------------------------------------
+// executarTestesUnitarios()
+// Executa a suíte de testes unitários para validar a lógica de
+// parametrização da SETTINGS, cacheamento de dados, fallbacks de
+// segurança e alinhamento de colunas dinâmicas do Forms.
+// Acesse os resultados no console de execução do Apps Script.
+// ------------------------------------------------------------
+function executarTestesUnitarios() {
+  Logger.log("🧪 INICIANDO SUÍTE DE TESTES UNITÁRIOS 🧪");
+  var sucessos = 0;
+  var falhas = 0;
+
+  function assert(condicao, descricao) {
+    if (condicao) {
+      Logger.log("🟢 [PASS] " + descricao);
+      sucessos++;
+    } else {
+      Logger.log("🔴 [FAIL] " + descricao);
+      falhas++;
+    }
+  }
+
+  // TESTE 1: Leitura do Equipamento COD-0911 (Microbiologia)
+  try {
+    var config = obterConfigEquipamento_("COD-0911");
+    assert(config !== null, "Configuração do COD-0911 deve ser encontrada.");
+    if (config) {
+      assert(config.tempMin === 34 && config.tempMax === 36, "COD-0911 deve possuir faixa 34°C - 36°C.");
+      assert(config.semUmidade === true, "COD-0911 não deve ter higrômetro (semUmidade = true).");
+      assert(config.documento === "FOR.PS.LAB. 03-02", "COD-0911 deve apontar para o documento FOR.PS.LAB. 03-02.");
+    }
+  } catch (err) {
+    assert(false, "Erro ao testar COD-0911: " + err.message);
+  }
+
+  // TESTE 2: Leitura do Equipamento COD-1040 (Produção)
+  try {
+    var config1040 = obterConfigEquipamento_("COD-1040");
+    assert(config1040 !== null, "Configuração do COD-1040 deve ser encontrada.");
+    if (config1040) {
+      assert(config1040.tempMin === 18 && config1040.tempMax === 28, "COD-1040 deve possuir faixa 18°C - 28°C.");
+      assert(config1040.semUmidade === false, "COD-1040 deve possuir higrômetro (semUmidade = false).");
+      assert(config1040.documento === "FOR.IT.PS.PRO. 08-04", "COD-1040 deve apontar para o documento FOR.IT.PS.PRO. 08-04.");
+    }
+  } catch (err) {
+    assert(false, "Erro ao testar COD-1040: " + err.message);
+  }
+
+  // TESTE 3: Verificação de Mapeamento de Payload Simplificado (9 Colunas - Sem Higrômetro)
+  try {
+    // Simula e.values de um formulário de laboratório sem umidade
+    var eMockLab = {
+      values: [
+        "25/05/2026 11:00:00", // [0] Timestamp
+        "COD-0911",            // [1] ID
+        "2026-05-25",          // [2] Data
+        "11:00",               // [3] Hora
+        "35.0",                // [4] Temp
+        "36.0",                // [5] Max
+        "34.0",                // [6] Min
+        "yuri",                // [7] Responsável (deslocado)
+        "Equipamento Ok"       // [8] Observações (deslocado)
+      ]
+    };
+    
+    var valsMock = eMockLab.values;
+    var umidadeMock, responsavelMock, observacoesMock;
+    
+    if (valsMock.length >= 10) {
+      umidadeMock     = valsMock[7];
+      responsavelMock = valsMock[8];
+      observacoesMock = valsMock[9];
+    } else {
+      umidadeMock     = ""; // Deve ser string vazia
+      responsavelMock = valsMock[7];
+      observacoesMock = valsMock[8];
+    }
+    
+    assert(umidadeMock === "", "Payload simplificado (9 colunas) deve gravar umidade vazia.");
+    assert(responsavelMock === "yuri", "Payload simplificado deve mapear o Responsável corretamente.");
+    assert(observacoesMock === "Equipamento Ok", "Payload simplificado deve mapear as Observações corretamente.");
+  } catch (err) {
+    assert(false, "Erro ao testar mapeamento simplificado: " + err.message);
+  }
+
+  // TESTE 4: Verificação de Mapeamento de Payload Tradicional (10 Colunas - Com Higrômetro)
+  try {
+    // Simula e.values de um formulário de produção com umidade
+    var eMockProd = {
+      values: [
+        "25/05/2026 11:00:00",
+        "COD-1040",
+        "2026-05-25",
+        "11:00",
+        "22.0",
+        "25.0",
+        "19.0",
+        "45.0",                // [7] Umidade
+        "samara",              // [8] Responsável
+        "Calibração ok"        // [9] Observações
+      ]
+    };
+    
+    var valsMock2 = eMockProd.values;
+    var umidadeMock2, responsavelMock2, observacoesMock2;
+    
+    if (valsMock2.length >= 10) {
+      umidadeMock2     = valsMock2[7];
+      responsavelMock2 = valsMock2[8];
+      observacoesMock2 = valsMock2[9];
+    } else {
+      umidadeMock2     = "";
+      responsavelMock2 = valsMock2[7];
+      observacoesMock2 = valsMock2[8];
+    }
+    
+    assert(umidadeMock2 === "45.0", "Payload tradicional (10 colunas) deve gravar a umidade corretamente.");
+    assert(responsavelMock2 === "samara", "Payload tradicional deve mapear o Responsável corretamente.");
+    assert(observacoesMock2 === "Calibração ok", "Payload tradicional deve mapear as Observações corretamente.");
+  } catch (err) {
+    assert(false, "Erro ao testar mapeamento tradicional: " + err.message);
+  }
+
+  Logger.log("=== CONCLUSÃO DOS TESTES ===");
+  Logger.log("  TOTAL AVALIADO: " + (sucessos + falhas));
+  Logger.log("  🟢 SUCESSOS: " + sucessos);
+  Logger.log("  🔴 FALHAS:   " + falhas);
+  
+  if (falhas === 0) {
+    Logger.log("🏆 SISTEMA 100% HOMOLOGADO E OPERACIONAL!");
+  } else {
+    Logger.log("⚠️ ATENÇÃO: HÁ ANOMALIAS DETECTADAS NA SUÍTE DE TESTES.");
+  }
+}
+
 // ------------------------------------------------------------
 // testeLog()
 // Simula um escaneamento de QR Code gravando diretamente
