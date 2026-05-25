@@ -7,8 +7,8 @@
 
 // Lista de equipamentos do laboratório de microbiologia que usam forms próprio (sem umidade)
 var EQUIPAMENTOS_LAB = [
-  "COD-0911","COD-0912","COD-0913",
-  "COD-0914","COD-0917","COD-1130","COD-1131"
+  "COD-1181","COD-1182","COD-1183",
+  "COD-1184","COD-1185","COD-1130","COD-1131"
 ];
 
 // ------------------------------------------------------------

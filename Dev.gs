@@ -35,17 +35,17 @@ function executarTestesUnitarios() {
     }
   }
 
-  // TESTE 1: Leitura do Equipamento COD-0911 (Microbiologia)
+  // TESTE 1: Leitura do Equipamento COD-1185 (Microbiologia - Termômetro da Estufa Mesófilos)
   try {
-    var config = obterConfigEquipamento_("COD-0911");
-    assert(config !== null, "Configuração do COD-0911 deve ser encontrada.");
+    var config = obterConfigEquipamento_("COD-1185");
+    assert(config !== null, "Configuração do COD-1185 deve ser encontrada.");
     if (config) {
-      assert(config.tempMin === 34 && config.tempMax === 36, "COD-0911 deve possuir faixa 34°C - 36°C.");
-      assert(config.semUmidade === true, "COD-0911 não deve ter higrômetro (semUmidade = true).");
-      assert(config.documento === "FOR.PS.LAB. 03-02", "COD-0911 deve apontar para o documento FOR.PS.LAB. 03-02.");
+      assert(config.tempMin === 34 && config.tempMax === 36, "COD-1185 deve possuir faixa 34°C - 36°C.");
+      assert(config.semUmidade === true, "COD-1185 não deve ter higrômetro (semUmidade = true).");
+      assert(config.documento === "FOR.PS.LAB. 03-02", "COD-1185 deve apontar para o documento FOR.PS.LAB. 03-02.");
     }
   } catch (err) {
-    assert(false, "Erro ao testar COD-0911: " + err.message);
+    assert(false, "Erro ao testar COD-1185: " + err.message);
   }
 
   // TESTE 2: Leitura do Equipamento COD-1040 (Produção)
@@ -67,7 +67,7 @@ function executarTestesUnitarios() {
     var eMockLab = {
       values: [
         "25/05/2026 11:00:00", // [0] Timestamp
-        "COD-0911",            // [1] ID
+        "COD-1185",            // [1] ID
         "2026-05-25",          // [2] Data
         "11:00",               // [3] Hora
         "35.0",                // [4] Temp
@@ -342,13 +342,13 @@ function criarAbaSettings() {
   // Dados dos equipamentos novos do laboratório (somente temperatura, SEM umidade)
   // Deixaremos TEMP_MIN e TEMP_MAX como vazios ou placeholders até confirmação
   var equipsLab = [
-    { cod: "COD-0911", nome: "Estufa Mesófilos", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 34, tempMax: 36 },
-    { cod: "COD-0912", nome: "Estufa Bolores e Leveduras", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 24, tempMax: 26 },
-    { cod: "COD-0913", nome: "Estufa Entero/Staph/E.coli", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 34, tempMax: 36 },
-    { cod: "COD-0914", nome: "Estufa Salmonella", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 40.5, tempMax: 42.5 },
-    { cod: "COD-0917", nome: "Estufa Coliformes termotolerantes", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 44, tempMax: 46 },
-    { cod: "COD-1130", nome: "Geladeira", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 2, tempMax: 8 },
-    { cod: "COD-1131", nome: "Ar Ambiente", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 16, tempMax: 22 }
+    { cod: "COD-1185", nome: "Estufa Mesófilos", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 34, tempMax: 36 },
+    { cod: "COD-1183", nome: "Estufa Bolores e Leveduras", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 24, tempMax: 26 },
+    { cod: "COD-1184", nome: "Estufa Entero/Staph/E.coli", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 34, tempMax: 36 },
+    { cod: "COD-1181", nome: "Estufa Salmonella", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 40.5, tempMax: 42.5 },
+    { cod: "COD-1182", nome: "Estufa Coliformes termotolerantes", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 44, tempMax: 46 },
+    { cod: "COD-1130", nome: "Geladeira Microbiologia", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 2, tempMax: 8 },
+    { cod: "COD-1131", nome: "Ar Ambiente Microbiologia", area: "Lab. Microbiologia", doc: "FOR.PS.LAB. 03-02", tempMin: 16, tempMax: 22 }
   ];
   
   equipsLab.forEach(function(item) {
@@ -381,5 +381,50 @@ function criarAbaSettings() {
   aba.setColumnWidth(11, 250); // FORMS_ID
   
   Logger.log("✅ População da aba SETTINGS finalizada com sucesso!");
+  Logger.log("=== FIM DA EXECUÇÃO ===");
+}
+
+// ------------------------------------------------------------
+// migrarCodigosEquipamento()
+// Função de migração temporária para atualizar os códigos antigos de
+// equipamentos para os novos códigos de termômetros na aba SETTINGS.
+// ------------------------------------------------------------
+function migrarCodigosEquipamento() {
+  Logger.log("=== INICIANDO MIGRAÇÃO DE CÓDIGOS EM SETTINGS ===");
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.planilhaId);
+    var aba = ss.getSheetByName("SETTINGS");
+    if (!aba) {
+      Logger.log("❌ Erro: Aba SETTINGS não encontrada!");
+      return;
+    }
+    
+    var range = aba.getDataRange();
+    var dados = range.getValues();
+    var totalAlterado = 0;
+    
+    // Mapeamento dos códigos antigos para os novos
+    var dePara = {
+      "COD-0911": "COD-1185",
+      "COD-0912": "COD-1183",
+      "COD-0913": "COD-1184",
+      "COD-0914": "COD-1181",
+      "COD-0917": "COD-1182"
+    };
+    
+    for (var i = 1; i < dados.length; i++) {
+      var codAntigo = String(dados[i][0]).trim();
+      if (dePara[codAntigo]) {
+        var codNovo = dePara[codAntigo];
+        aba.getRange(i + 1, 1).setValue(codNovo); // Atualiza coluna CODIGO
+        Logger.log("🔄 Código alterado na linha " + (i + 1) + ": " + codAntigo + " ➔ " + codNovo);
+        totalAlterado++;
+      }
+    }
+    
+    Logger.log("✅ Migração finalizada! " + totalAlterado + " equipamentos atualizados com sucesso.");
+  } catch (err) {
+    Logger.log("❌ Erro durante a migração: " + err.message);
+  }
   Logger.log("=== FIM DA EXECUÇÃO ===");
 }
