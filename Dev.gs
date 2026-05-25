@@ -417,8 +417,8 @@ function atualizarSgsaqLabEDocumentos() {
     var abaRelatorio = ss.getSheetByName(ABA_RELATORIO);
     if (abaRelatorio) {
       var celula = abaRelatorio.getRange("I1");
-      celula.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:D;4;FALSE);"FOR.IT.PS.PRO. 08-04")');
-      Logger.log("✅ RELATÓRIO MENSAL: Célula I1 (mesclada I1:K3) configurada diretamente com a fórmula dinâmica de VLOOKUP.");
+      celula.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:D;4;FALSE) & CHAR(10) & IF(VLOOKUP($B$5;SETTINGS!A:D;4;FALSE)="FOR.OS.LAB. 03-02"; "Rev. 00" & CHAR(10) & "Vigência: 25/05/2026"; "Rev. 00" & CHAR(10) & "Vigência: 20/01/2026"); "FOR.IT.PS.PRO. 08-04" & CHAR(10) & "Rev. 00" & CHAR(10) & "Vigência: 20/01/2026")');
+      Logger.log("✅ RELATÓRIO MENSAL: Célula I1 (mesclada I1:K3) configurada diretamente com a fórmula dinâmica multilinha (Código + Revisão + Vigência).");
     } else {
       Logger.log("❌ Erro: Aba 'Relatório Mensal' não encontrada!");
     }
