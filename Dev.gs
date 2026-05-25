@@ -416,30 +416,9 @@ function atualizarSgsaqLabEDocumentos() {
     // 2. Tornar o cabeçalho/célula de documento do Relatório Mensal 100% dinâmico
     var abaRelatorio = ss.getSheetByName(ABA_RELATORIO);
     if (abaRelatorio) {
-      var rangeRel = abaRelatorio.getDataRange();
-      var valoresRel = rangeRel.getValues();
-      var formulasRel = rangeRel.getFormulas();
-      var celulaEncontrada = null;
-      
-      for (var r = 0; r < valoresRel.length; r++) {
-        for (var c = 0; c < valoresRel[r].length; c++) {
-          var val = String(valoresRel[r][c]);
-          var form = String(formulasRel[r][c]);
-          if (val.indexOf("FOR.IT.PS.PRO. 08-04") !== -1 || form.indexOf("FOR.IT.PS.PRO. 08-04") !== -1) {
-            celulaEncontrada = abaRelatorio.getRange(r + 1, c + 1);
-            break;
-          }
-        }
-        if (celulaEncontrada) break;
-      }
-      
-      if (celulaEncontrada) {
-        // Define a fórmula dinâmica que lê da aba SETTINGS baseado no COD selecionado em B5
-        celulaEncontrada.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:D;4;FALSE);"FOR.IT.PS.PRO. 08-04")');
-        Logger.log("✅ RELATÓRIO MENSAL: Célula " + celulaEncontrada.getA1Notation() + " atualizada com a fórmula dinâmica de VLOOKUP.");
-      } else {
-        Logger.log("⚠️ Alerta: Célula com 'FOR.IT.PS.PRO. 08-04' não encontrada no Relatório Mensal para substituição automática.");
-      }
+      var celula = abaRelatorio.getRange("I1");
+      celula.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:D;4;FALSE);"FOR.IT.PS.PRO. 08-04")');
+      Logger.log("✅ RELATÓRIO MENSAL: Célula I1 (mesclada I1:K3) configurada diretamente com a fórmula dinâmica de VLOOKUP.");
     } else {
       Logger.log("❌ Erro: Aba 'Relatório Mensal' não encontrada!");
     }
