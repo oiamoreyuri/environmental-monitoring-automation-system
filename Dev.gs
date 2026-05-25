@@ -288,7 +288,8 @@ function criarAbaSettings() {
   // Define cabeçalho estrutural
   var headers = [
     "CODIGO", "NOME", "AREA", "DOCUMENTO", "SEM_UMIDADE",
-    "TEMP_MIN", "TEMP_MAX", "UMID_MIN", "UMID_MAX", "ALERTA_ATIVO", "FORMS_ID"
+    "TEMP_MIN", "TEMP_MAX", "UMID_MIN", "UMID_MAX", "ALERTA_ATIVO", "FORMS_ID",
+    "REVISAO", "VIGENCIA"
   ];
   aba.clear();
   aba.appendRow(headers);
@@ -335,7 +336,9 @@ function criarAbaSettings() {
       30,             // UMID_MIN
       65,             // UMID_MAX
       item.alerta,    // ALERTA_ATIVO
-      ""              // FORMS_ID
+      "",             // FORMS_ID
+      "Rev. 00",      // REVISAO
+      "20/01/2026"    // VIGENCIA
     ]);
   });
   
@@ -363,7 +366,9 @@ function criarAbaSettings() {
       "",             // UMID_MIN
       "",             // UMID_MAX
       true,           // ALERTA_ATIVO
-      ""              // FORMS_ID
+      "",             // FORMS_ID
+      "Rev. 00",      // REVISAO
+      "25/05/2026"    // VIGENCIA
     ]);
   });
   
@@ -379,6 +384,8 @@ function criarAbaSettings() {
   aba.setColumnWidth(9, 90);   // UMID_MAX
   aba.setColumnWidth(10, 110); // ALERTA_ATIVO
   aba.setColumnWidth(11, 250); // FORMS_ID
+  aba.setColumnWidth(12, 100); // REVISAO
+  aba.setColumnWidth(13, 110); // VIGENCIA
   
   Logger.log("✅ População da aba SETTINGS finalizada com sucesso!");
   Logger.log("=== FIM DA EXECUÇÃO ===");
@@ -390,25 +397,40 @@ function criarAbaSettings() {
 // e torna a célula do código de documento na aba "Relatório Mensal" 100% dinâmica.
 // ------------------------------------------------------------
 function atualizarSgsaqLabEDocumentos() {
-  Logger.log("=== INICIANDO ATUALIZAÇÃO SGSAQ ===");
+  Logger.log("=== INICIANDO ATUALIZAÇÃO SGSAQ E CONFIGURAÇÃO DE COLUNAS ===");
   try {
     var ss = SpreadsheetApp.openById(CONFIG.planilhaId);
     
     // 1. Atualizar a aba SETTINGS
     var abaSettings = ss.getSheetByName("SETTINGS");
     if (abaSettings) {
+      // Garante os novos cabeçalhos
+      abaSettings.getRange(1, 12).setValue("REVISAO");
+      abaSettings.getRange(1, 13).setValue("VIGENCIA");
+      abaSettings.setColumnWidth(12, 100);
+      abaSettings.setColumnWidth(13, 110);
+      
       var range = abaSettings.getDataRange();
       var valores = range.getValues();
       var atualizados = 0;
+      
       for (var r = 1; r < valores.length; r++) {
-        var doc = String(valores[r][3] || "").trim();
         var cod = String(valores[r][0] || "").trim();
-        if (doc === "FOR.PS.LAB. 03-02" || doc === "FOR.OS.LAB. 03-02" || cod.startsWith("COD-118") || cod.startsWith("COD-113")) {
-          abaSettings.getRange(r + 1, 4).setValue("FOR.OS.LAB. 03-02");
+        if (cod.startsWith("COD-118") || cod.startsWith("COD-113")) {
+          // Equipamentos do laboratório
+          abaSettings.getRange(r + 1, 4).setValue("FOR.OS.LAB. 03-02"); // Col D
+          abaSettings.getRange(r + 1, 12).setValue("Rev. 00");         // Col L
+          abaSettings.getRange(r + 1, 13).setValue("25/05/2026");       // Col M
+          atualizados++;
+        } else if (cod.startsWith("COD-10")) {
+          // Equipamentos da produção
+          abaSettings.getRange(r + 1, 4).setValue("FOR.IT.PS.PRO. 08-04"); // Col D
+          abaSettings.getRange(r + 1, 12).setValue("Rev. 00");             // Col L
+          abaSettings.getRange(r + 1, 13).setValue("20/01/2026");           // Col M
           atualizados++;
         }
       }
-      Logger.log("✅ SETTINGS: " + atualizados + " linhas atualizadas para o documento 'FOR.OS.LAB. 03-02'.");
+      Logger.log("✅ SETTINGS: " + atualizados + " linhas configuradas com DOCUMENTO, REVISAO e VIGENCIA.");
     } else {
       Logger.log("❌ Erro: Aba SETTINGS não encontrada!");
     }
@@ -417,8 +439,9 @@ function atualizarSgsaqLabEDocumentos() {
     var abaRelatorio = ss.getSheetByName(ABA_RELATORIO);
     if (abaRelatorio) {
       var celula = abaRelatorio.getRange("I1");
-      celula.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:D;4;FALSE) & CHAR(10) & IF(VLOOKUP($B$5;SETTINGS!A:D;4;FALSE)="FOR.OS.LAB. 03-02"; "Rev. 00" & CHAR(10) & "Vigência: 25/05/2026"; "Rev. 00" & CHAR(10) & "Vigência: 20/01/2026"); "FOR.IT.PS.PRO. 08-04" & CHAR(10) & "Rev. 00" & CHAR(10) & "Vigência: 20/01/2026")');
-      Logger.log("✅ RELATÓRIO MENSAL: Célula I1 (mesclada I1:K3) configurada diretamente com a fórmula dinâmica multilinha (Código + Revisão + Vigência).");
+      // A fórmula puxa dinamicamente a Coluna D (4), Coluna L (12) e Coluna M (13) da SETTINGS
+      celula.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:M;4;FALSE) & CHAR(10) & VLOOKUP($B$5;SETTINGS!A:M;12;FALSE) & CHAR(10) & VLOOKUP($B$5;SETTINGS!A:M;13;FALSE); "FOR.IT.PS.PRO. 08-04" & CHAR(10) & "Rev. 00" & CHAR(10) & "20/01/2026")');
+      Logger.log("✅ RELATÓRIO MENSAL: Célula I1 (mesclada I1:K3) configurada diretamente com a fórmula dinâmica multilinha vinculada ao SETTINGS.");
     } else {
       Logger.log("❌ Erro: Aba 'Relatório Mensal' não encontrada!");
     }
