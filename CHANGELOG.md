@@ -4,6 +4,32 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-25 13:00] — Roteamento de Forms do Laboratório: Passo 4 (Etiquetas ZPL)
+
+### 🎯 Objetivo da Alteração
+Gerar os arquivos de programação de etiquetas Zebra (ZPL) com a formatação industrial e URLs pré-programadas para os 7 equipamentos do laboratório de microbiologia, assegurando a implantação física impecável.
+
+### 📝 Descrição Técnica das Alterações
+
+#### 1. Geração de Templates Zebra (`.zpl`)
+*   **Arquivos Gerados**:
+    *   `assets/zpl/cod-0911.zpl` | Estufa Mesófilos
+    *   `assets/zpl/cod-0912.zpl` | Estufa Bolores e Leveduras
+    *   `assets/zpl/cod-0913.zpl` | Estufa Entero/Staph/E.coli
+    *   `assets/zpl/cod-0914.zpl` | Estufa Salmonella
+    *   `assets/zpl/cod-0917.zpl` | Estufa Coliformes termotolerantes
+    *   `assets/zpl/cod-1130.zpl` | Geladeira
+    *   `assets/zpl/cod-1131.zpl` | Ar Ambiente
+*   **Detalhamento do Layout de Emissão**:
+    *   Medidas: 800px de largura por 638px de comprimento, compatíveis com rolos industriais padrão Zebra.
+    *   QR Code configurado com bloco de dados `QA` apontando dinamicamente para o Web App do Apps Script (`https://script.google.com/macros/.../exec?id=COD-XXXX`).
+    *   Textos de cabeçalho com nome do equipamento e rodapé com instruções de escaneamento estruturados com fontes limpas e redimensionadas para máxima nitidez de impressão.
+
+### 🧪 Verificação e Validação
+*   **Armazenamento**: Criada a pasta `assets/zpl/` local e os 7 arquivos foram comitados com sucesso no Git.
+
+---
+
 ## [2026-05-25 12:50] — Roteamento de Forms do Laboratório: Passo 3 (QrCode.gs)
 
 ### 🎯 Objetivo da Alteração
