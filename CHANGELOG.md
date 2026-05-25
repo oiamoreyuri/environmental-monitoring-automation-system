@@ -4,6 +4,37 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-25 13:58] — Rastreabilidade & Calibração: Migração de IDs do Laboratório para Códigos de Termômetros
+
+### 🎯 Objetivo da Alteração
+Substituir os códigos físicos das estufas de microbiologia (COD-091X) pelos códigos de calibração/inventário dos termômetros de monitoramento (COD-118X). Isso aprimora a rastreabilidade do processo sob as diretrizes FSSC 22000, associando a leitura diretamente ao instrumento calibrado.
+
+### 📝 Descrição Técnica das Alterações
+
+#### 1. Migração de Códigos no Roteador e Configurações
+*   **Arquivos Modificados**:
+    *   [QrCode.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/QrCode.gs): Atualizada a constante `EQUIPAMENTOS_LAB` com os novos IDs (`COD-1181`, `COD-1182`, `COD-1183`, `COD-1184`, `COD-1185`).
+    *   [Dev.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/Dev.gs):
+        *   Atualizada a lista `equipsLab` na função `criarAbaSettings()`.
+        *   Atualizada a suíte de testes unitários (`TESTE 1` e `TESTE 3`) para validar asserções usando o novo código `COD-1185` (antigo `COD-0911`).
+        *   Criada a função temporária de migração `migrarCodigosEquipamento()`, executada com sucesso para atualizar dinamicamente a coluna `CODIGO` na aba `SETTINGS` do Google Sheets, e posteriormente removida para manter a limpeza de código.
+
+#### 2. Atualização das Etiquetas de Impressão (ZPL)
+*   **Arquivos Deletados**: Os arquivos obsoletos `cod-0911.zpl`, `cod-0912.zpl`, `cod-0913.zpl`, `cod-0914.zpl` e `cod-0917.zpl` foram removidos.
+*   **Novos Arquivos Gerados**:
+    *   `assets/zpl/cod-1181.zpl` (Estufa Salmonella)
+    *   `assets/zpl/cod-1182.zpl` (Estufa Coliformes termotolerantes)
+    *   `assets/zpl/cod-1183.zpl` (Estufa Bolores e Leveduras)
+    *   `assets/zpl/cod-1184.zpl` (Estufa Entero/Staph/E.coli)
+    *   `assets/zpl/cod-1185.zpl` (Estufa Mesófilos)
+*   **Nomenclatura**: Atualizadas as descrições visuais de `Geladeira Microbiologia` (`cod-1130.zpl`) e `Ar Ambiente Microbiologia` (`cod-1131.zpl`) conforme solicitado pelo usuário.
+
+### 🧪 Verificação e Validação
+*   **Execução da Migração**: A rotina `migrarCodigosEquipamento()` foi executada com sucesso pelo usuário, migrando todas as chaves de estufas para termômetros diretamente no Google Sheets.
+*   **Compilação e Push**: Todos os arquivos GS foram validados localmente e implantados remotamente na nuvem através do clasp.
+
+---
+
 ## [2026-05-25 13:00] — Roteamento de Forms do Laboratório: Passo 4 (Etiquetas ZPL)
 
 ### 🎯 Objetivo da Alteração
