@@ -4,6 +4,28 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-25 12:00] — Etapa 4: Dinamização de Documentos Regulatórios em Certificado.gs
+
+### 🎯 Objetivo da Alteração
+Garantir total rastreabilidade perante auditorias de qualidade (como a FSSC 22000) parametrizando os rodapés e metadados dos certificados digitais de conformidade emitidos, exibindo o respectivo código de documento de controle (`DOCUMENTO`) conforme configurado na aba `SETTINGS` para cada equipamento.
+
+### 📝 Descrição Técnica das Alterações
+
+#### 1. Integração Dinâmica em `Certificado.gs`
+*   **Arquivo Modificado**: [Certificado.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/Certificado.gs).
+*   **Mapeamento de Metadados Regulatórios**:
+    *   No escopo da função principal de geração de PDF (`gerarPdfCertificado_`), passamos a carregar dinamicamente o objeto de configurações do equipamento sendo auditado através do helper `obterConfigEquipamento_(cod)`.
+    *   Extraímos o valor da coluna `DOCUMENTO` correspondente.
+*   **Eliminação do Rodapé Hardcoded (Zero Hardcoding)**:
+    *   Substituímos o código de documento estático `'FOR.IT.PS.PRO. 08-04'` no HTML template do certificado pela variável de documento resolvida dinamicamente (`documento + ' | Rev. 00 | ' + CONFIG.empresa`).
+    *   Caso ocorra falha de leitura no Sheets, o sistema adota `'FOR.IT.PS.PRO. 08-04'` como fallback de segurança, garantindo resiliência operacional contínua e sem riscos de travamento de threads.
+
+### 🧪 Verificação e Validação
+*   **Sync**: Sincronizado via `clasp push`.
+*   **Diagnóstico**: Executado sem erros de escopo global ou de concorrência.
+
+---
+
 ## [2026-05-25 11:45] — Etapa 3: Integração do Novo Formulário do Laboratório (Sem Higrômetro)
 
 ### 🎯 Objetivo da Alteração

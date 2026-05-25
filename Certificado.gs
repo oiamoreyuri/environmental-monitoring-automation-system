@@ -214,6 +214,10 @@ function gerarPdfCertificado_(nomeArquivo, hash, mes, ano, cod, tamanho, aprovad
     new Date(), CONFIG.fusoHorario, "dd/MM/yyyy 'às' HH:mm:ss"
   );
 
+  // Lê o código do documento regulatório a partir da aba SETTINGS
+  var configEquip = obterConfigEquipamento_(cod);
+  var documento   = configEquip ? configEquip.documento : "FOR.IT.PS.PRO. 08-04"; // Fallback clássico
+
   // QR Code aponta para a página de verificação do certificado.
   var urlVerificacao = CONFIG.urlAprovacao
     + "?page=verify&hash=" + hash
@@ -314,7 +318,7 @@ function gerarPdfCertificado_(nomeArquivo, hash, mes, ano, cod, tamanho, aprovad
     '</div>' +
     blocoAprovacao +
     '<div class="rodape">Documento gerado automaticamente pelo Sistema de Monitoramento Ambiental da Docefruta. | ' +
-    'FOR.IT.PS.PRO. 08-04 | Rev. 00 | ' + CONFIG.empresa + '</div>' +
+    documento + ' | Rev. 00 | ' + CONFIG.empresa + '</div>' +
     '</body></html>';
 
   // Conversão HTML → PDF via API avançada do Drive.
