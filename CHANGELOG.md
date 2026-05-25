@@ -4,6 +4,26 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-25 12:45] — Roteamento de Forms do Laboratório: Passo 2 (Config.gs)
+
+### 🎯 Objetivo da Alteração
+Injetar de forma modular as novas propriedades de configuração do formulário do laboratório (`formUrlLab` e `entriesLab`) no objeto global `CONFIG` retornado por `getConfig()`.
+
+### 📝 Descrição Técnica das Alterações
+
+#### 1. Integração Modular em `Config.gs`
+*   **Arquivo Modificado**: [Config.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/Config.gs).
+*   **Mapeamento de Propriedades**:
+    *   Acrescentados os atributos `formUrlLab` (URL pública do formulário de laboratório) e `entriesLab` (objeto aninhado contendo `id`, `data` e `hora`) extraídos do PropertiesService.
+*   **Correção de Sintaxe em `Dev.gs`**:
+    *   **Arquivo Modificado**: [Dev.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/Dev.gs).
+    *   Removida com sucesso a função temporária de setup `adicionarPropriedadesLab()` e corrigida uma chave dupla residual no encerramento do arquivo para manter 100% da integridade sintática e compiladora do Apps Script.
+
+### 🧪 Verificação e Validação
+*   **Sync**: Sincronizado e validado via `clasp push`.
+
+---
+
 ## [2026-05-25 12:40] — Roteamento de Forms do Laboratório: Passo 1 (PropertiesService)
 
 ### 🎯 Objetivo da Alteração

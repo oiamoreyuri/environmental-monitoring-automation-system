@@ -383,29 +383,3 @@ function criarAbaSettings() {
   Logger.log("✅ População da aba SETTINGS finalizada com sucesso!");
   Logger.log("=== FIM DA EXECUÇÃO ===");
 }
-
-// ------------------------------------------------------------
-// adicionarPropriedadesLab()
-// Função temporária (Passo 1) para adicionar as propriedades do novo
-// formulário do laboratório no PropertiesService.
-// ------------------------------------------------------------
-function adicionarPropriedadesLab() {
-  Logger.log("=== INICIANDO CADASTRO DE PROPRIEDADES LAB ===");
-  try {
-    var props = {
-      FORM_URL_LAB:   "https://docs.google.com/forms/d/e/1FAIpQLScc0vg_vtJWrrqiECJhjlpEdB-hoP7dEyvLvsl2tapZmClNsg/viewform",
-      ENTRY_ID_LAB:   "447805386",
-      ENTRY_DATA_LAB: "455437390",
-      ENTRY_HORA_LAB: "1540778517"
-    };
-    PropertiesService.getScriptProperties().setProperties(props);
-    Logger.log("✅ Propriedades cadastradas com sucesso:");
-    Logger.log("   FORM_URL_LAB: " + props.FORM_URL_LAB);
-    Logger.log("   ENTRY_ID_LAB: " + props.ENTRY_ID_LAB);
-    Logger.log("   ENTRY_DATA_LAB: " + props.ENTRY_DATA_LAB);
-    Logger.log("   ENTRY_HORA_LAB: " + props.ENTRY_HORA_LAB);
-  } catch (err) {
-    Logger.log("❌ Erro ao cadastrar propriedades: " + err.message);
-  }
-  Logger.log("=== FIM DA EXECUÇÃO ===");
-}

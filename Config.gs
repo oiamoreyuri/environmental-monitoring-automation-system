@@ -55,6 +55,12 @@ function getConfig() {
       data: props.ENTRY_DATA,
       hora: props.ENTRY_HORA
     },
+    formUrlLab: props.FORM_URL_LAB,
+    entriesLab: {
+      id:   props.ENTRY_ID_LAB,
+      data: props.ENTRY_DATA_LAB,
+      hora: props.ENTRY_HORA_LAB
+    },
     // Inicializado como vazio, será preenchido programaticamente
     equipamentosValidos: [],
     abaLog:           "LOG_ACESSO",
