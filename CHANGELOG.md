@@ -4,6 +4,32 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-25 11:30] — Etapa 2: Parametrização Dinâmica de Config.gs via SETTINGS
+
+### 🎯 Objetivo da Alteração
+Desacoplar permanentemente o código-fonte das definições físicas e limites térmicos de equipamentos, habilitando o Apps Script a ler todas as constantes operacionais diretamente da aba `SETTINGS` de forma assíncrona.
+
+### 📝 Descrição Técnica das Alterações
+
+#### 1. Refatoração Estrutural de `Config.gs`
+*   **Arquivo Modificado**: [Config.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/Config.gs).
+*   **Implementação do Coletor Dinâmico**:
+    *   Criada a função `carregarSettings_()` que abre a planilha, obtém os dados da aba `SETTINGS` e mapeia dinamicamente os valores de cada coluna para objetos estruturados em memória.
+*   **Implementação de Cache Local em Nível de Módulo**:
+    *   Adicionada a variável `_cacheSettings` para reter o objeto de configurações carregado. Isso evita requisições redundantes à planilha de dentro do mesmo ciclo de execução (evitando estouro de cota e eliminando gargalos de latência).
+*   **Resolução de Conflito de Inicialização Global (Order of Execution)**:
+    *   A variável global `EQUIPAMENTOS_PDF` dependia de `CONFIG.planilhaId` para carregar dados, mas `CONFIG` era declarada após ela. Corrigimos esta dependência estruturando a obtenção da lista dinâmica somente *após* a inicialização segura do `CONFIG = getConfig()`.
+*   **Função Utilitária de Consulta**:
+    *   Desenvolvida a função helper `obterConfigEquipamento_(cod)` para servir como ponte de leitura rápida de limites e metadados específicos para os demais módulos.
+*   **Garantia contra Regressões de I/O (Fail-safe Fallbacks)**:
+    *   Implementados arrays estáticos de contingência dentro de `obterCodigosEquipamentos_()` e no getter `ALERTA.equipamentosAtivos`. Caso ocorra alguma queda de conectividade da planilha ou exclusão acidental da aba `SETTINGS`, o sistema continuará operando com os equipamentos padrão e não sofrerá crash.
+
+### 🧪 Verificação e Validação
+*   **Sync**: Sincronizado via `clasp push`.
+*   **Validação de Código**: O diagnóstico de sistema (`diagnosticoSistema` em `Dev.gs`) foi rodado e os módulos executaram sem nenhum conflito de compilação ou de escopo global.
+
+---
+
 ## [2026-05-25 11:15] — Etapa 1: Criação e População da Aba SETTINGS
 
 ### 🎯 Objetivo da Alteração
