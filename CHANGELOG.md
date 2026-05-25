@@ -4,6 +4,24 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-25 12:40] — Roteamento de Forms do Laboratório: Passo 1 (PropertiesService)
+
+### 🎯 Objetivo da Alteração
+Configurar o ambiente no Google Cloud/Apps Script para armazenar com total segurança as chaves de configuração do novo Google Form de laboratório sem expor dados sensíveis no código de produção.
+
+### 📝 Descrição Técnica das Alterações
+
+#### 1. Inserção do Utilitário de Setup Temporário em `Dev.gs`
+*   **Arquivo Modificado**: [Dev.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/Dev.gs).
+*   **Criação de `adicionarPropriedadesLab()`**:
+    *   Desenvolvida a função para injetar no `PropertiesService` do projeto as chaves de configuração `FORM_URL_LAB`, `ENTRY_ID_LAB`, `ENTRY_DATA_LAB` e `ENTRY_HORA_LAB` associadas ao formulário de laboratório sem higrômetro.
+    *   Tratamento de erros estruturado com try-catch e logging de conformidade.
+
+### 🧪 Verificação e Validação
+*   **Sync**: Sincronizado com a nuvem do Google Apps Script com sucesso via `clasp push`.
+
+---
+
 ## [2026-05-25 12:00] — Etapa 4: Dinamização de Documentos Regulatórios em Certificado.gs
 
 ### 🎯 Objetivo da Alteração
