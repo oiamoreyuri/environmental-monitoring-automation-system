@@ -4,6 +4,36 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-25 11:45] — Etapa 3: Integração do Novo Formulário do Laboratório (Sem Higrômetro)
+
+### 🎯 Objetivo da Alteração
+Suportar a recepção automatizada de dados de medição térmica dos novos equipamentos do laboratório (estufas e geladeiras) que não realizam monitoramento de umidade relativa, mantendo a consolidação em uma única fonte de verdade (`RAW_DATA`).
+
+### 📝 Descrição Técnica das Alterações
+
+#### 1. Inteligência Adaptativa em `onFormSubmit`
+*   **Arquivo Modificado**: [Forms.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/Forms.gs).
+*   **Análise do Payload de Entrada (Dynamic Shape Detection)**:
+    *   Para evitar a necessidade de gerenciar chaves rígidas de identificadores de formulário (Form IDs), o trigger agora inspeciona dinamicamente a dimensão de `e.values` (`vals.length`).
+    *   Formulários contendo higrômetro enviam 10 parâmetros. Formulários simplificados (apenas temperatura) enviam 9 parâmetros.
+    *   A lógica realoca automaticamente os ponteiros de arrays: caso `length === 9`, a umidade é gravada como string vazia (`""`) em `RAW_DATA` e os índices de "Responsável" e "Observações" são deslocados em 1 casa à esquerda para coincidir com a estrutura exata do novo Forms, eliminando qualquer corrupção de colunas.
+
+#### 2. Reengenharia de Segurança em `corrigirRawDataCompleto`
+*   **Arquivo Modificado**: [Forms.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/Forms.gs).
+*   **Varredura Multi-Aba Dinâmica**:
+    *   A função utilitária de manutenção foi completamente reescrita para varrer de forma automática *todas* as abas do Google Sheets que comecem com o prefixo `"Respostas ao formulário"`.
+*   **Inspecção Dinâmica de Cabeçalho (Header Inspection)**:
+    *   O script inspeciona a linha 0 de cada aba de resposta para identificar se a pergunta de "Umidade" está presente e em qual coluna ela se encontra.
+    *   Mapeia e extrai os valores de temperatura, responsável e observações com segurança baseando-se no layout detectado de cada aba.
+*   **Algoritmo de Ordenação Temporal (Chronological Sorting)**:
+    *   Após coletar e processar todas as respostas de todos os formulários vinculados, o script ordena a lista inteira de forma cronológica com base no Timestamp de submissão do formulário, garantindo a integridade cronológica de `RAW_DATA`.
+
+### 🧪 Verificação e Validação
+*   **Sync**: Sincronizado via `clasp push`.
+*   **Compilação**: Compilado na nuvem e validado localmente via diagnóstico sem nenhuma pendência.
+
+---
+
 ## [2026-05-25 11:30] — Etapa 2: Parametrização Dinâmica de Config.gs via SETTINGS
 
 ### 🎯 Objetivo da Alteração

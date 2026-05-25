@@ -53,15 +53,25 @@ function onFormSubmit(e) {
     var deviceId       = vals[1] ? vals[1].toString().trim() : "";
     var dataMedicao    = normalizarData_(vals[2] ? vals[2].toString() : "");
     var horaMedicao    = vals[3] ? vals[3].toString().substring(0, 5) : "";
+    
     var tempAtual      = normalizarDecimal_(vals[4]);
     var tempMax        = normalizarDecimal_(vals[5]);
     var tempMin        = normalizarDecimal_(vals[6]);
-    var umidade        = normalizarDecimal_(vals[7]);
-    var responsavel    = normalizarNome_(vals[8] || "");
+    
+    var umidade, responsavel, observacoes;
 
-    // Múltipla escolha: normaliza a string retornada pelo Forms,
-    // removendo espaços extras e padronizando o separador.
-    var observacoes    = normalizarObservacoes_(vals[9] || "");
+    // Identificação dinâmica da estrutura da resposta.
+    // O formulário sem umidade possui 9 elementos em e.values (Timestamp + 8 respostas).
+    // O formulário original com umidade possui 10 elementos em e.values.
+    if (vals.length >= 10) {
+      umidade     = normalizarDecimal_(vals[7]);
+      responsavel = normalizarNome_(vals[8] || "");
+      observacoes = normalizarObservacoes_(vals[9] || "");
+    } else {
+      umidade     = ""; // Grava em branco na RAW_DATA para sensores sem higrômetro
+      responsavel = normalizarNome_(vals[7] || "");
+      observacoes = normalizarObservacoes_(vals[8] || "");
+    }
 
     abaRaw.appendRow([
       timestampForms, deviceId, dataMedicao, horaMedicao,
@@ -70,7 +80,7 @@ function onFormSubmit(e) {
     ]);
 
     Logger.log("✅ RAW_DATA: " + deviceId + " | " + dataMedicao + " " + horaMedicao
-      + " | " + responsavel + " | obs: " + observacoes);
+      + " | " + responsavel + " | umid: '" + umidade + "' | obs: " + observacoes);
 
   } catch (err) {
     Logger.log("❌ Erro onFormSubmit: " + err.message);
@@ -162,12 +172,28 @@ function normalizarNome_(nome) {
 // sem confirmar backup ou exportação prévia dos dados.
 // ------------------------------------------------------------
 function corrigirRawDataCompleto() {
-  var ss      = SpreadsheetApp.openById(CONFIG.planilhaId);
-  var abaResp = ss.getSheetByName("Respostas ao formulário 1");
-  var dados   = abaResp.getDataRange().getValues();
-  var agora   = new Date();
+  var ss    = SpreadsheetApp.openById(CONFIG.planilhaId);
+  var agora = new Date();
 
-  // Remove a aba existente antes de recriar.
+  // Coleta dados de todas as abas que contêm respostas de formulários no projeto
+  var abas = ss.getSheets();
+  var todasAsRespostas = [];
+  
+  abas.forEach(function(aba) {
+    var nome = aba.getName();
+    // Identifica abas que começam com o prefixo padrão do Forms no Sheets
+    if (nome.indexOf("Respostas ao formulário") === 0) {
+      var dados = aba.getDataRange().getValues();
+      if (dados.length > 1) {
+        todasAsRespostas.push({
+          nomeAba: nome,
+          dados: dados
+        });
+      }
+    }
+  });
+
+  // Remove a aba existente antes de recriar
   var abaExistente = ss.getSheetByName(ABA_RAW);
   if (abaExistente) ss.deleteSheet(abaExistente);
 
@@ -178,37 +204,68 @@ function corrigirRawDataCompleto() {
   abaRaw.getRange("E:H").setNumberFormat("0.0##");
 
   var novasLinhas = [];
-  for (var i = 1; i < dados.length; i++) {
-    var linha = dados[i];
-    if (!linha[0] || !linha[1]) continue;
+  
+  todasAsRespostas.forEach(function(item) {
+    var dados = item.dados;
+    var header = dados[0];
+    
+    // Inspeciona os cabeçalhos para detectar dinamicamente a presença da pergunta de Umidade
+    var temUmidade = false;
+    var idxUmidade = -1;
+    for (var col = 0; col < header.length; col++) {
+      if (header[col].toString().toLowerCase().indexOf("umidade") !== -1) {
+        temUmidade = true;
+        idxUmidade = col;
+        break;
+      }
+    }
+    
+    for (var i = 1; i < dados.length; i++) {
+      var linha = dados[i];
+      if (!linha[0] || !linha[1]) continue;
 
-    var dataF = linha[2] instanceof Date
-      ? Utilities.formatDate(linha[2], CONFIG.fusoHorario, "dd/MM/yyyy")
-      : normalizarData_(linha[2].toString());
+      var dataF = linha[2] instanceof Date
+        ? Utilities.formatDate(linha[2], CONFIG.fusoHorario, "dd/MM/yyyy")
+        : normalizarData_(linha[2].toString());
 
-    var horaF = linha[3] instanceof Date
-      ? Utilities.formatDate(linha[3], CONFIG.fusoHorario, "HH:mm")
-      : linha[3].toString().substring(0, 5);
+      var horaF = linha[3] instanceof Date
+        ? Utilities.formatDate(linha[3], CONFIG.fusoHorario, "HH:mm")
+        : linha[3].toString().substring(0, 5);
 
-    novasLinhas.push([
-      linha[0],
-      linha[1].toString().trim(),
-      dataF,
-      horaF,
-      parseFloat(linha[4]) || "",
-      parseFloat(linha[5]) || "",
-      parseFloat(linha[6]) || "",
-      parseFloat(linha[7]) || "",
-      normalizarNome_(linha[8]),
-      linha[9] || "",
-      "forms",
-      agora
-    ]);
-  }
+      var tempAtual = parseFloat(linha[4]) || "";
+      var tempMax   = parseFloat(linha[5]) || "";
+      var tempMin   = parseFloat(linha[6]) || "";
+      
+      // Mapeamento dinâmico baseado na existência de higrômetro no form desta aba
+      var umidade = temUmidade && idxUmidade !== -1 ? (parseFloat(linha[idxUmidade]) || "") : "";
+      var responsavelVal = temUmidade ? linha[8] : linha[7];
+      var observacoesVal = temUmidade ? linha[9] : linha[8];
+
+      novasLinhas.push([
+        linha[0],
+        linha[1].toString().trim(),
+        dataF,
+        horaF,
+        tempAtual,
+        tempMax,
+        tempMin,
+        umidade,
+        normalizarNome_(responsavelVal),
+        observacoesVal || "",
+        "forms",
+        agora
+      ]);
+    }
+  });
+
+  // Ordena cronologicamente por Timestamp do Forms para manter a coesão histórica na RAW_DATA
+  novasLinhas.sort(function(a, b) {
+    return new Date(a[0]).getTime() - new Date(b[0]).getTime();
+  });
 
   if (novasLinhas.length > 0) {
     abaRaw.getRange(2, 1, novasLinhas.length, HEADER_RAW.length).setValues(novasLinhas);
   }
 
-  Logger.log("✅ RAW_DATA recriada: " + novasLinhas.length + " registros.");
+  Logger.log("✅ RAW_DATA recriada de todas as fontes: " + novasLinhas.length + " registros.");
 }
