@@ -450,31 +450,10 @@ function atualizarSgsaqLabEDocumentos() {
       celulaI1.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:N;4;FALSE) & CHAR(10) & VLOOKUP($B$5;SETTINGS!A:N;12;FALSE) & CHAR(10) & TEXT(VLOOKUP($B$5;SETTINGS!A:N;13;FALSE);"dd/mm/aaaa"); "FOR.IT.PS.PRO. 08-04" & CHAR(10) & "Rev. 00" & CHAR(10) & "20/01/2026")');
       Logger.log("✅ RELATÓRIO MENSAL: Célula I1 (mesclada I1:K3) configurada diretamente com a fórmula dinâmica multilinha vinculada ao SETTINGS.");
       
-      // 3. Buscar e tornar o Título do Relatório Dinâmico
-      var rangeRel = abaRelatorio.getRange("A1:H10"); // O título costuma ficar nas primeiras colunas e linhas
-      var valoresRel = rangeRel.getValues();
-      var formulasRel = rangeRel.getFormulas();
-      var celulaTitulo = null;
-      
-      for (var r = 0; r < valoresRel.length; r++) {
-        for (var c = 0; c < valoresRel[r].length; c++) {
-          var val = String(valoresRel[r][c]).toUpperCase();
-          var form = String(formulasRel[r][c]).toUpperCase();
-          if ((val.indexOf("REGISTRO DE MONITORAMENTO") !== -1 || form.indexOf("REGISTRO DE MONITORAMENTO") !== -1) && 
-              (val.indexOf("TEMPERATURA") !== -1 || form.indexOf("TEMPERATURA") !== -1)) {
-            celulaTitulo = abaRelatorio.getRange(r + 1, c + 1);
-            break;
-          }
-        }
-        if (celulaTitulo) break;
-      }
-      
-      if (celulaTitulo) {
-        celulaTitulo.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:N;14;FALSE); "REGISTRO DE MONITORAMENTO DE TEMPERATURA E UMIDADE AMBIENTAL")');
-        Logger.log("✅ RELATÓRIO MENSAL: Título na célula " + celulaTitulo.getA1Notation() + " configurado com fórmula dinâmica do TITULO_DOC.");
-      } else {
-        Logger.log("⚠️ Alerta: Célula contendo o título do relatório (REGISTRO DE MONITORAMENTO...) não foi encontrada no intervalo A1:H10 para atualização automática.");
-      }
+      // 3. Tornar o Título do Relatório Dinâmico (gravação direta na célula C1, mesclada C1:F3)
+      var celulaTitulo = abaRelatorio.getRange("C1");
+      celulaTitulo.setFormula('=IFERROR(VLOOKUP($B$5;SETTINGS!A:N;14;FALSE); "REGISTRO DE MONITORAMENTO DE TEMPERATURA E UMIDADE AMBIENTAL")');
+      Logger.log("✅ RELATÓRIO MENSAL: Célula C1 (mesclada C1:F3) configurada diretamente com a fórmula dinâmica do TITULO_DOC.");
     } else {
       Logger.log("❌ Erro: Aba 'Relatório Mensal' não encontrada!");
     }
