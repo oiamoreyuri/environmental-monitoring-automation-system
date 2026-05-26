@@ -86,12 +86,12 @@ function executarTestesUnitarios() {
       responsavelMock = valsMock[8];
       observacoesMock = valsMock[9];
     } else {
-      umidadeMock     = ""; // Deve ser string vazia
+      umidadeMock     = "N/A"; // Deve ser "N/A" para conformidade FSSC 22000
       responsavelMock = valsMock[7];
       observacoesMock = valsMock[8];
     }
     
-    assert(umidadeMock === "", "Payload simplificado (9 colunas) deve gravar umidade vazia.");
+    assert(umidadeMock === "N/A", "Payload simplificado (9 colunas) deve gravar umidade como 'N/A'.");
     assert(responsavelMock === "yuri", "Payload simplificado deve mapear o Responsável corretamente.");
     assert(observacoesMock === "Equipamento Ok", "Payload simplificado deve mapear as Observações corretamente.");
   } catch (err) {
@@ -226,7 +226,7 @@ function diagnosticoSistema() {
   try {
     var ss   = SpreadsheetApp.openById(CONFIG.planilhaId);
     var abas = ["RAW_DATA", "LOG_INTEGRIDADE", "LOG_ACESSO",
-                "Relatório Mensal", "Lista de Equips.", "Feriados"];
+                "Relatório Mensal", "SETTINGS", "Feriados"];
     abas.forEach(function(nome) {
       var aba = ss.getSheetByName(nome);
       Logger.log((aba ? "✅" : "❌") + " Aba: " + nome
@@ -287,9 +287,9 @@ function criarAbaSettings() {
   
   // Define cabeçalho estrutural
   var headers = [
-    "CODIGO", "NOME", "AREA", "DOCUMENTO", "SEM_UMIDADE",
+    "CODIGO", "LOCAL", "EQUIPAMENTO", "DOCUMENTO", "SEM_UMIDADE",
     "TEMP_MIN", "TEMP_MAX", "UMID_MIN", "UMID_MAX", "ALERTA_ATIVO", "FORMS_ID",
-    "REVISAO", "VIGENCIA", "TITULO_DOC"
+    "REVISAO", "VIGENCIA", "TITULO_DOC", "FABRICANTE", "MODELO"
   ];
   aba.clear();
   aba.appendRow(headers);
@@ -323,12 +323,12 @@ function criarAbaSettings() {
   ];
   
   equipsAtuais.forEach(function(item) {
-    var area = locaisExistentes[item.cod] || "";
-    var nome = area; // Por padrão, nome amigável assume a área até confirmação
+    var local = locaisExistentes[item.cod] || "";
+    var equipamento = local; // Por padrão, equipamento assume o local até confirmação
     aba.appendRow([
       item.cod,       // CODIGO
-      nome,           // NOME
-      area,           // AREA
+      local,          // LOCAL
+      equipamento,    // EQUIPAMENTO
       item.doc,       // DOCUMENTO
       false,          // SEM_UMIDADE
       18,             // TEMP_MIN
@@ -339,27 +339,29 @@ function criarAbaSettings() {
       "",             // FORMS_ID
       "Rev. 00",      // REVISAO
       "20/01/2026",   // VIGENCIA
-      "REGISTRO DE MONITORAMENTO DE TEMPERATURA E UMIDADE AMBIENTAL" // TITULO_DOC
+      "REGISTRO DE MONITORAMENTO DE TEMPERATURA E UMIDADE AMBIENTAL", // TITULO_DOC
+      "",             // FABRICANTE
+      ""              // MODELO
     ]);
   });
   
   // Dados dos equipamentos novos do laboratório (somente temperatura, SEM umidade)
   // Deixaremos TEMP_MIN e TEMP_MAX como vazios ou placeholders até confirmação
   var equipsLab = [
-    { cod: "COD-1185", nome: "Estufa Mesófilos", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 34, tempMax: 36 },
-    { cod: "COD-1183", nome: "Estufa Bolores e Leveduras", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 24, tempMax: 26 },
-    { cod: "COD-1184", nome: "Estufa Entero/Staph/E.coli", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 34, tempMax: 36 },
-    { cod: "COD-1181", nome: "Estufa Salmonella", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 40.5, tempMax: 42.5 },
-    { cod: "COD-1182", nome: "Estufa Coliformes termotolerantes", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 44, tempMax: 46 },
-    { cod: "COD-1130", nome: "Geladeira Microbiologia", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 2, tempMax: 8 },
-    { cod: "COD-1131", nome: "Ar Ambiente Microbiologia", area: "Lab. Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 16, tempMax: 22 }
+    { cod: "COD-1185", local: "Lab. Microbiologia", equipamento: "Estufa Mesófilos", doc: "FOR.OS.LAB. 03-02", tempMin: 34, tempMax: 36 },
+    { cod: "COD-1183", local: "Lab. Microbiologia", equipamento: "Estufa Bolores e Leveduras", doc: "FOR.OS.LAB. 03-02", tempMin: 24, tempMax: 26 },
+    { cod: "COD-1184", local: "Lab. Microbiologia", equipamento: "Estufa Entero/Staph/E.coli", doc: "FOR.OS.LAB. 03-02", tempMin: 34, tempMax: 36 },
+    { cod: "COD-1181", local: "Lab. Microbiologia", equipamento: "Estufa Salmonella", doc: "FOR.OS.LAB. 03-02", tempMin: 40.5, tempMax: 42.5 },
+    { cod: "COD-1182", local: "Lab. Microbiologia", equipamento: "Estufa Coliformes termotolerantes", doc: "FOR.OS.LAB. 03-02", tempMin: 44, tempMax: 46 },
+    { cod: "COD-1130", local: "Lab. Microbiologia", equipamento: "Geladeira Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 2, tempMax: 8 },
+    { cod: "COD-1131", local: "Lab. Microbiologia", equipamento: "Ar Ambiente Microbiologia", doc: "FOR.OS.LAB. 03-02", tempMin: 16, tempMax: 22 }
   ];
   
   equipsLab.forEach(function(item) {
     aba.appendRow([
-      item.cod,       // CODIGO
-      item.nome,      // NOME
-      item.area,      // AREA
+      item.cod,            // CODIGO
+      item.local,          // LOCAL
+      item.equipamento,    // EQUIPAMENTO
       item.doc,       // DOCUMENTO
       true,           // SEM_UMIDADE
       item.tempMin,   // TEMP_MIN
@@ -370,14 +372,16 @@ function criarAbaSettings() {
       "",             // FORMS_ID
       "Rev. 00",      // REVISAO
       "25/05/2026",   // VIGENCIA
-      "REGISTRO DE MONITORAMENTO DE TEMPERATURA DE ESTUFAS E GELADEIRA" // TITULO_DOC
+      "REGISTRO DE MONITORAMENTO DE TEMPERATURA DE ESTUFAS E GELADEIRA", // TITULO_DOC
+      "",             // FABRICANTE
+      ""              // MODELO
     ]);
   });
   
   // Formatação visual das colunas da aba SETTINGS
   aba.setColumnWidth(1, 100);  // CODIGO
-  aba.setColumnWidth(2, 200);  // NOME
-  aba.setColumnWidth(3, 180);  // AREA
+  aba.setColumnWidth(2, 200);  // LOCAL
+  aba.setColumnWidth(3, 180);  // EQUIPAMENTO
   aba.setColumnWidth(4, 180);  // DOCUMENTO
   aba.setColumnWidth(5, 120);  // SEM_UMIDADE
   aba.setColumnWidth(6, 90);   // TEMP_MIN
@@ -389,7 +393,138 @@ function criarAbaSettings() {
   aba.setColumnWidth(12, 100); // REVISAO
   aba.setColumnWidth(13, 110); // VIGENCIA
   aba.setColumnWidth(14, 300); // TITULO_DOC
+  aba.setColumnWidth(15, 150); // FABRICANTE
+  aba.setColumnWidth(16, 150); // MODELO
   
   Logger.log("✅ População da aba SETTINGS finalizada com sucesso!");
   Logger.log("=== FIM DA EXECUÇÃO ===");
+}
+
+// ------------------------------------------------------------
+// padronizarSettingsEFormulas()
+// Função utilitária de migração (executar uma vez):
+// 1. Garante cabeçalhos corretos na aba SETTINGS (incl. FABRICANTE, MODELO)
+// 2. Migra dados de FABRICANTE e MODELO da aba "Lista de Equips." → SETTINGS
+// 3. Corrige LOCAL ↔ EQUIPAMENTO invertidos nos equipamentos do lab
+// 4. Corrige a fórmula da célula I1 do Relatório Mensal (aaaa → yyyy)
+// 5. Atualiza VLOOKUPs do cabeçalho do Relatório Mensal para SETTINGS
+// ------------------------------------------------------------
+function padronizarSettingsEFormulas() {
+  Logger.log("=== PADRONIZAÇÃO E MIGRAÇÃO SETTINGS ===");
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.planilhaId);
+    
+    // 1. Garantir cabeçalhos corretos na SETTINGS
+    var abaSettings = ss.getSheetByName("SETTINGS");
+    if (!abaSettings) {
+      Logger.log("❌ Aba SETTINGS não encontrada!");
+      return;
+    }
+    abaSettings.getRange(1, 2).setValue("LOCAL");
+    abaSettings.getRange(1, 3).setValue("EQUIPAMENTO");
+    abaSettings.getRange(1, 15).setValue("FABRICANTE");
+    abaSettings.getRange(1, 16).setValue("MODELO");
+    abaSettings.setColumnWidth(15, 150);
+    abaSettings.setColumnWidth(16, 150);
+    Logger.log("✅ SETTINGS: Cabeçalhos atualizados (LOCAL, EQUIPAMENTO, FABRICANTE, MODELO).");
+    
+    // 2. Migrar FABRICANTE e MODELO da aba "Lista de Equips." para SETTINGS
+    var abaEquip = ss.getSheetByName("Lista de Equips.");
+    if (abaEquip) {
+      var dadosEquip = abaEquip.getDataRange().getValues();
+      var mapaEquip = {};
+      for (var e = 1; e < dadosEquip.length; e++) {
+        var codEquip = String(dadosEquip[e][0]).trim();
+        if (codEquip) {
+          mapaEquip[codEquip] = {
+            fabricante: dadosEquip[e][3] || "",
+            modelo:     dadosEquip[e][4] || ""
+          };
+        }
+      }
+      
+      var dadosSettings = abaSettings.getDataRange().getValues();
+      var migrados = 0;
+      for (var s = 1; s < dadosSettings.length; s++) {
+        var codSet = String(dadosSettings[s][0]).trim();
+        if (mapaEquip[codSet]) {
+          abaSettings.getRange(s + 1, 15).setValue(mapaEquip[codSet].fabricante); // FABRICANTE
+          abaSettings.getRange(s + 1, 16).setValue(mapaEquip[codSet].modelo);     // MODELO
+          migrados++;
+        }
+      }
+      Logger.log("✅ MIGRAÇÃO: " + migrados + " equipamentos com FABRICANTE/MODELO migrados da Lista de Equips. → SETTINGS.");
+    } else {
+      Logger.log("⚠️ Aba 'Lista de Equips.' não encontrada — migração de FABRICANTE/MODELO ignorada.");
+    }
+    
+    // 3. Corrigir LOCAL ↔ EQUIPAMENTO invertidos nos equipamentos do laboratório
+    var dadosAtuais = abaSettings.getDataRange().getValues();
+    var corrigidos = 0;
+    var labEquips = {
+      "COD-1185": "Estufa Mesófilos",
+      "COD-1183": "Estufa Bolores e Leveduras",
+      "COD-1184": "Estufa Entero/Staph/E.coli",
+      "COD-1181": "Estufa Salmonella",
+      "COD-1182": "Estufa Coliformes termotolerantes",
+      "COD-1130": "Geladeira Microbiologia",
+      "COD-1131": "Ar Ambiente Microbiologia"
+    };
+    for (var r = 1; r < dadosAtuais.length; r++) {
+      var cod = String(dadosAtuais[r][0]).trim();
+      if (labEquips[cod]) {
+        abaSettings.getRange(r + 1, 2).setValue("Lab. Microbiologia");  // LOCAL
+        abaSettings.getRange(r + 1, 3).setValue(labEquips[cod]);         // EQUIPAMENTO
+        corrigidos++;
+      }
+    }
+    Logger.log("✅ SETTINGS: " + corrigidos + " equipamentos do lab com LOCAL/EQUIPAMENTO corrigidos.");
+    
+    // 4. Corrigir fórmulas do Relatório Mensal
+    var abaRelatorio = ss.getSheetByName(ABA_RELATORIO);
+    if (abaRelatorio) {
+      // I1: Código do documento + Revisão + Vigência (corrigido aaaa → yyyy)
+      abaRelatorio.getRange("I1").setFormula(
+        '=IFERROR(VLOOKUP($B$5;SETTINGS!A:P;4;FALSE) & CHAR(10) & VLOOKUP($B$5;SETTINGS!A:P;12;FALSE) & CHAR(10) & TEXT(VLOOKUP($B$5;SETTINGS!A:P;13;FALSE);"dd/mm/yyyy"); "FOR.IT.PS.PRO. 08-04" & CHAR(10) & "Rev. 00" & CHAR(10) & "20/01/2026")'
+      );
+      Logger.log("✅ RELATÓRIO: Fórmula I1 corrigida (aaaa → yyyy, range A:P).");
+      
+      // C1: Título dinâmico do documento
+      abaRelatorio.getRange("C1").setFormula(
+        '=IFERROR(VLOOKUP($B$5;SETTINGS!A:P;14;FALSE); "REGISTRO DE MONITORAMENTO DE TEMPERATURA E UMIDADE AMBIENTAL")'
+      );
+      Logger.log("✅ RELATÓRIO: Fórmula C1 (título dinâmico) atualizada.");
+      
+      // 5. Atualizar VLOOKUPs do cabeçalho para apontar para SETTINGS
+      // LOCAL: busca coluna B (2) da SETTINGS
+      abaRelatorio.getRange("D5").setFormula(
+        '=IFERROR(VLOOKUP($B$5;SETTINGS!A:P;2;FALSE); "")'
+      );
+      Logger.log("✅ RELATÓRIO: Fórmula D5 (LOCAL) atualizada para SETTINGS.");
+      
+      // EQUIPAMENTO: busca coluna C (3) da SETTINGS
+      abaRelatorio.getRange("D6").setFormula(
+        '=IFERROR(VLOOKUP($B$5;SETTINGS!A:P;3;FALSE); "")'
+      );
+      Logger.log("✅ RELATÓRIO: Fórmula D6 (EQUIPAMENTO) atualizada para SETTINGS.");
+      
+      // FABRICANTE: busca coluna O (15) da SETTINGS
+      abaRelatorio.getRange("G5").setFormula(
+        '=IFERROR(VLOOKUP($B$5;SETTINGS!A:P;15;FALSE); "")'
+      );
+      Logger.log("✅ RELATÓRIO: Fórmula G5 (FABRICANTE) atualizada para SETTINGS.");
+      
+      // MODELO: busca coluna P (16) da SETTINGS
+      abaRelatorio.getRange("G6").setFormula(
+        '=IFERROR(VLOOKUP($B$5;SETTINGS!A:P;16;FALSE); "")'
+      );
+      Logger.log("✅ RELATÓRIO: Fórmula G6 (MODELO) atualizada para SETTINGS.");
+    } else {
+      Logger.log("❌ Aba 'Relatório Mensal' não encontrada!");
+    }
+    
+  } catch (err) {
+    Logger.log("❌ Erro: " + err.message);
+  }
+  Logger.log("=== FIM DA PADRONIZAÇÃO ===");
 }

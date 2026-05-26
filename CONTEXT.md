@@ -70,7 +70,8 @@ Google Drive, Gmail, GitHub.
 | `Relatório Mensal` | Template dinâmico gerado por fórmulas FILTER |
 | `LOG_INTEGRIDADE` | Hash SHA-256, metadados dos PDFs, status de aprovação |
 | `LOG_ACESSO` | Registro de escaneamentos de QR Code |
-| `Lista de Equips.` | Cadastro de equipamentos com limites nominais |
+| `SETTINGS` | Cadastro unificado de equipamentos, limites, documentos e metadados regulatórios |
+| `Lista de Equips.` | ~~Cadastro legado~~ — dados migrados para SETTINGS (pode ser removida) |
 | `Feriados` | Feriados cadastrados para cálculo de último dia útil |
 
 ---

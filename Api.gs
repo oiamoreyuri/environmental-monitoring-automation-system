@@ -86,30 +86,30 @@ function apiDashboard_() {
 // Retorna o cadastro completo de equipamentos com limites
 // nominais de temperatura e umidade.
 //
-// Colunas esperadas em "Lista de Equips.":
-//   A=ID, B=Local, C=Equipamento, D=Fabricante, E=Modelo,
-//   F=TEMP_MIN, G=TEMP_MAX, H=UMID_MIN, I=UMID_MAX
-// Valores padrão aplicados se colunas F-I estiverem vazias.
+// Fonte de dados: aba SETTINGS (via carregarSettings_).
+// Colunas mapeadas: CODIGO, LOCAL, EQUIPAMENTO, FABRICANTE,
+// MODELO, TEMP_MIN, TEMP_MAX, UMID_MIN, UMID_MAX,
+// SEM_UMIDADE, DOCUMENTO.
 // ------------------------------------------------------------
 function apiEquipamentos_() {
-  var ss    = SpreadsheetApp.openById(CONFIG.planilhaId);
-  var aba   = ss.getSheetByName("Lista de Equips.");
-  var dados = aba.getDataRange().getValues();
-  var out   = [];
+  var settings = carregarSettings_();
+  var out = [];
 
-  for (var i = 1; i < dados.length; i++) {
-    if (!dados[i][0]) continue;
+  for (var i = 0; i < settings.length; i++) {
+    var item = settings[i];
     out.push({
-      codigo:      String(dados[i][0]).trim(),
-      area:        dados[i][1] || "",
-      setor:       inferirSetor_(dados[i][1] || ""),
-      equipamento: dados[i][2] || "",
-      fabricante:  dados[i][3] || "",
-      modelo:      dados[i][4] || "",
-      tempMin:     parseFloat(dados[i][5]) || 18,
-      tempMax:     parseFloat(dados[i][6]) || 28,
-      umidMin:     parseFloat(dados[i][7]) || 30,
-      umidMax:     parseFloat(dados[i][8]) || 65
+      codigo:      item.codigo,
+      area:        item.local,
+      setor:       inferirSetor_(item.local),
+      equipamento: item.equipamento,
+      fabricante:  item.fabricante,
+      modelo:      item.modelo,
+      tempMin:     item.tempMin !== null ? item.tempMin : 18,
+      tempMax:     item.tempMax !== null ? item.tempMax : 28,
+      umidMin:     item.umidMin !== null ? item.umidMin : 30,
+      umidMax:     item.umidMax !== null ? item.umidMax : 65,
+      semUmidade:  item.semUmidade,
+      documento:   item.documento
     });
   }
 

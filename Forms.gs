@@ -68,7 +68,7 @@ function onFormSubmit(e) {
       responsavel = normalizarNome_(vals[8] || "");
       observacoes = normalizarObservacoes_(vals[9] || "");
     } else {
-      umidade     = ""; // Grava em branco na RAW_DATA para sensores sem higrômetro
+      umidade     = "N/A"; // Equipamentos sem higrômetro: grava "N/A" para conformidade FSSC 22000
       responsavel = normalizarNome_(vals[7] || "");
       observacoes = normalizarObservacoes_(vals[8] || "");
     }
@@ -237,7 +237,7 @@ function corrigirRawDataCompleto() {
       var tempMin   = parseFloat(linha[6]) || "";
       
       // Mapeamento dinâmico baseado na existência de higrômetro no form desta aba
-      var umidade = temUmidade && idxUmidade !== -1 ? (parseFloat(linha[idxUmidade]) || "") : "";
+      var umidade = temUmidade && idxUmidade !== -1 ? (parseFloat(linha[idxUmidade]) || "") : "N/A";
       var responsavelVal = temUmidade ? linha[8] : linha[7];
       var observacoesVal = temUmidade ? linha[9] : linha[8];
 

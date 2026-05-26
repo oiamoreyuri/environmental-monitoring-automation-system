@@ -111,8 +111,8 @@ function carregarSettings_() {
       
       lista.push({
         codigo:       String(row[0]).trim(),
-        nome:         String(row[1] || row[0]).trim(),
-        area:         String(row[2] || "").trim(),
+        local:        String(row[1] || row[0]).trim(),
+        equipamento:  String(row[2] || "").trim(),
         documento:    String(row[3] || "").trim(),
         semUmidade:   row[4] === true || String(row[4]).toLowerCase() === "true",
         tempMin:      row[5] !== "" ? Number(row[5]) : null,
@@ -120,7 +120,9 @@ function carregarSettings_() {
         umidMin:      row[7] !== "" ? Number(row[7]) : null,
         umidMax:      row[8] !== "" ? Number(row[8]) : null,
         alertaAtivo:  row[9] === true || String(row[9]).toLowerCase() === "true",
-        formsId:      String(row[10] || "").trim()
+        formsId:      String(row[10] || "").trim(),
+        fabricante:   String(row[14] || "").trim(),
+        modelo:       String(row[15] || "").trim()
       });
     }
     

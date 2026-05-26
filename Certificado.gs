@@ -385,12 +385,11 @@ function paginaListaAprovacao_(mes, ano) {
     Logger.log("⚠️ Erro ao listar PDFs: " + err.message);
   }
 
-  // Lê locais dos equipamentos.
+  // Lê locais dos equipamentos via SETTINGS (cache em memória).
   var locais   = {};
-  var abaEquip = ss.getSheetByName("Lista de Equips.");
-  if (abaEquip) {
-    var equips = abaEquip.getDataRange().getValues();
-    for (var j = 1; j < equips.length; j++) locais[equips[j][0]] = equips[j][1] || "";
+  var settings = carregarSettings_();
+  for (var j = 0; j < settings.length; j++) {
+    locais[settings[j].codigo] = settings[j].local || "";
   }
 
   // Monta linhas HTML da tabela.
@@ -454,18 +453,13 @@ function paginaConfirmacaoAprovacao_(cod, mes, ano, sucesso) {
 
 // ------------------------------------------------------------
 // buscarLocalEquipamento_(ss, cod)
-// Retorna o local (área) de um equipamento a partir do
-// cadastro na aba "Lista de Equips.". Retorna "" se não encontrado.
+// Retorna o local de um equipamento a partir da aba SETTINGS
+// (via cache em memória). Retorna "" se não encontrado.
 // Função auxiliar privada deste módulo.
 // ------------------------------------------------------------
 function buscarLocalEquipamento_(ss, cod) {
-  var abaEquip = ss.getSheetByName("Lista de Equips.");
-  if (!abaEquip) return "";
-  var equips = abaEquip.getDataRange().getValues();
-  for (var i = 1; i < equips.length; i++) {
-    if (equips[i][0] === cod) return equips[i][1] || "";
-  }
-  return "";
+  var config = obterConfigEquipamento_(cod);
+  return config ? config.local : "";
 }
 
 // ------------------------------------------------------------
@@ -581,14 +575,11 @@ function carregarTabelaAprovacao(mes, ano) {
     Logger.log("⚠️ Erro ao listar PDFs: " + err.message);
   }
 
-  // Lê locais dos equipamentos
+  // Lê locais dos equipamentos via SETTINGS (cache em memória)
   var locais   = {};
-  var abaEquip = ss.getSheetByName("Lista de Equips.");
-  if (abaEquip) {
-    var equips = abaEquip.getDataRange().getValues();
-    for (var j = 1; j < equips.length; j++) {
-      locais[equips[j][0]] = equips[j][1] || "";
-    }
+  var settings = carregarSettings_();
+  for (var j = 0; j < settings.length; j++) {
+    locais[settings[j].codigo] = settings[j].local || "";
   }
 
   // Monta HTML da tabela

@@ -226,7 +226,10 @@ function corrigirMapeamentoColunas() {
     [76,77,"$A76"]
   ];
 
-  var colMap = [[2,"D"],[3,"E"],[4,"F"],[5,"G"],[6,"H"],[7,"I"]];
+  // Colunas de temperatura: D=TempAtual, E=TempMax, F=TempMin (RAW_DATA cols E,F,G)
+  // Coluna de umidade: I (RAW_DATA col H) — tratada separadamente para N/A
+  var colMapTemp = [[2,"D"],[3,"E"],[4,"F"],[5,"G"]];
+  var colUmidade = [6,"H"]; // Coluna 6 do Relatório (G) ← RAW_DATA col H
 
   var refK = [
     "$K9","$K10","$K11","$K12","$K13","$K14","$K15","$K16","$K17","$K18",
@@ -238,7 +241,7 @@ function corrigirMapeamentoColunas() {
     "$K74","$K75","$K76","$K77"
   ];
 
-  // Fórmula para colunas numéricas (temp/umidade)
+  // Fórmula para colunas numéricas (temperatura)
   function fNumerico(colRaw, refDia, turno) {
     var crit = turno === "m"
       ? "VALUE(LEFT(RAW_DATA!D:D;2))<12"
@@ -248,6 +251,19 @@ function corrigirMapeamentoColunas() {
       + "MONTH(DATEVALUE(RAW_DATA!C:C))=$I$5;"
       + "YEAR(DATEVALUE(RAW_DATA!C:C))=$I$6;"
       + "RAW_DATA!B:B=$B$5;" + crit + ");1;1))";
+  }
+
+  // Fórmula para coluna de umidade — exibe "N/A" se SEM_UMIDADE=TRUE na SETTINGS
+  function fUmidade(colRaw, refDia, turno) {
+    var crit = turno === "m"
+      ? "VALUE(LEFT(RAW_DATA!D:D;2))<12"
+      : "VALUE(LEFT(RAW_DATA!D:D;2))>=12";
+    var filtro = "IFERROR(ARRAY_CONSTRAIN(FILTER(RAW_DATA!" + colRaw + ":" + colRaw + ";"
+      + "DAY(DATEVALUE(RAW_DATA!C:C))=VALUE(" + refDia + ");"
+      + "MONTH(DATEVALUE(RAW_DATA!C:C))=$I$5;"
+      + "YEAR(DATEVALUE(RAW_DATA!C:C))=$I$6;"
+      + "RAW_DATA!B:B=$B$5;" + crit + ");1;1))";
+    return "=IF(IFERROR(VLOOKUP($B$5;SETTINGS!A:E;5;FALSE);FALSE)=TRUE;\"N/A\";" + filtro + ")";
   }
 
   // Fórmula para coluna de observações com detecção de FDS
@@ -268,11 +284,17 @@ function corrigirMapeamentoColunas() {
   for (var d = 0; d < dias.length; d++) {
     var lm = dias[d][0], lt = dias[d][1], ref = dias[d][2];
     var km = refK[d * 2], kt = refK[d * 2 + 1];
-    for (var c = 0; c < colMap.length; c++) {
-      aba.getRange(lm, colMap[c][0]).setFormula(fNumerico(colMap[c][1], ref, "m"));
-      aba.getRange(lt, colMap[c][0]).setFormula(fNumerico(colMap[c][1], ref, "t"));
+    // Colunas de temperatura
+    for (var c = 0; c < colMapTemp.length; c++) {
+      aba.getRange(lm, colMapTemp[c][0]).setFormula(fNumerico(colMapTemp[c][1], ref, "m"));
+      aba.getRange(lt, colMapTemp[c][0]).setFormula(fNumerico(colMapTemp[c][1], ref, "t"));
       count += 2;
     }
+    // Coluna de umidade — com verificação N/A
+    aba.getRange(lm, colUmidade[0]).setFormula(fUmidade(colUmidade[1], ref, "m"));
+    aba.getRange(lt, colUmidade[0]).setFormula(fUmidade(colUmidade[1], ref, "t"));
+    count += 2;
+    // Coluna de observações
     aba.getRange(lm, 8).setFormula(fObservacao(ref, "m", km));
     aba.getRange(lt, 8).setFormula(fObservacao(ref, "t", kt));
     count += 2;

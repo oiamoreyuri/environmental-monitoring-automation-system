@@ -4,6 +4,53 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-26 07:20] — Conformidade Umidade "N/A" + Unificação SETTINGS ← Lista de Equips.
+
+### 🎯 Objetivo da Alteração
+Resolver duas vulnerabilidades operacionais: (1) células de umidade em branco no Relatório Mensal para equipamentos sem higrômetro, que podem gerar não-conformidades (NC) em auditoria FSSC 22000; (2) redundância de dados entre as abas `SETTINGS` e `Lista de Equips.`, unificando tudo na SETTINGS.
+
+### 📝 Descrição Técnica das Alterações
+
+#### Parte 1 — Tratamento de Umidade "N/A"
+
+##### Forms.gs
+*   **`onFormSubmit`**: Alterado de gravar `""` para `"N/A"` na coluna de umidade da RAW_DATA quando o payload possui 9 colunas (equipamentos sem higrômetro).
+*   **`corrigirRawDataCompleto`**: Idem — reconstrução da RAW_DATA agora grava `"N/A"` para formulários sem pergunta de umidade.
+
+##### Pdf.gs
+*   **Nova função `fUmidade`**: Fórmula inteligente que verifica `SETTINGS.SEM_UMIDADE` via VLOOKUP antes de exibir o valor. Se `TRUE`, exibe `"N/A"` em vez de tentar puxar dados do FILTER.
+*   **Separação de `colMap`**: A coluna de umidade foi separada do mapeamento genérico de temperatura (`colMapTemp`) para usar `fUmidade` em vez de `fNumerico`.
+
+#### Parte 2 — Unificação SETTINGS ← Lista de Equips.
+
+##### Config.gs
+*   **`carregarSettings_`**: Campos `fabricante` (col O) e `modelo` (col P) adicionados ao objeto retornado.
+
+##### Api.gs
+*   **`apiEquipamentos_`**: Reescrito para ler da SETTINGS (via `carregarSettings_()`) em vez da aba `Lista de Equips.`. Retorno enriquecido com `semUmidade` e `documento`.
+
+##### Certificado.gs
+*   **`buscarLocalEquipamento_`**: Migrado para usar `obterConfigEquipamento_(cod)` em vez de ler a aba `Lista de Equips.` diretamente.
+*   **`paginaListaAprovacao_`**: Leitura de locais migrada para `carregarSettings_()`.
+*   **`carregarTabelaAprovacao`**: Idem.
+
+##### Dev.gs
+*   **`criarAbaSettings`**: Adicionadas colunas `FABRICANTE` (O) e `MODELO` (P) nos headers e dados.
+*   **`diagnosticoSistema`**: Substituído `Lista de Equips.` por `SETTINGS` na lista de abas verificadas.
+*   **`executarTestesUnitarios`**: Asserção atualizada de `""` para `"N/A"`.
+*   **`padronizarSettingsEFormulas`**: Reescrita completa com 5 etapas: cabeçalhos, migração FABRICANTE/MODELO, correção LOCAL↔EQUIPAMENTO, fórmula I1 (yyyy), VLOOKUPs do cabeçalho.
+
+##### CONTEXT.md
+*   Tabela de abas atualizada: `SETTINGS` adicionada, `Lista de Equips.` marcada como obsoleta.
+
+### 🧪 Verificação e Validação
+*   **Testes**: Executar `executarTestesUnitarios` para validar N/A e mapeamentos.
+*   **Migração**: Executar `padronizarSettingsEFormulas` para aplicar todas as mudanças na planilha.
+*   **Fórmulas**: Executar `corrigirMapeamentoColunas` para reaplicar fórmulas FILTER com `fUmidade`.
+*   **Verificação visual**: Alternar B5 entre produção e lab para confirmar N/A na umidade.
+
+---
+
 ## [2026-05-25 18:40] — Controle Documental Dinâmico (SGSAQ): REVISAO, VIGENCIA e TITULO_DOC
 
 ### 🎯 Objetivo da Alteração
