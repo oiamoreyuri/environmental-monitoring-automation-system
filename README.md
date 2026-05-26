@@ -16,6 +16,7 @@ The system covers the full monitoring lifecycle:
 - **Digital approval workflow** for the Quality Supervisor (PCQI)
 - **Tamper-evident certificates** with approval signature and audit trail
 - **Automated alerts** for incomplete monitoring records
+- **Dynamic document control** (SGSAQ) with revision and effective date tracking
 
 ---
 
@@ -24,15 +25,17 @@ The system covers the full monitoring lifecycle:
 | Feature | Description |
 |---|---|
 | QR Code identification | Each equipment has a unique QR that pre-fills the form |
-| Google Forms integration | Mobile-friendly data entry with pre-populated fields |
-| RAW_DATA pipeline | Normalized storage layer with fixed schema |
+| Google Forms integration | Separate forms for production (temp + humidity) and lab (temp only) |
+| RAW_DATA pipeline | Normalized storage layer with fixed 12-column schema |
+| SETTINGS configuration | Centralized equipment config — limits, documents, alerts |
 | Automated PDF reports | Generated on the last business day of each month |
 | SHA-256 integrity | Every report gets a cryptographic hash stored in LOG_INTEGRIDADE |
 | Approval web interface | Supervisor reviews and approves reports via browser |
 | Approval certificates | PDF certificates with hash, approval block and signature |
 | Hash verification page | QR on certificate links to live verification against LOG_INTEGRIDADE |
 | Automated alerts | E-mail + WhatsApp notifications for missing records (9h and 15h) |
-| Approval notifications | E-mail + WhatsApp sent automatically after PDF generation |
+| N/A compliance | Lab equipment without hygrometer displays "N/A" instead of blank cells |
+| Dynamic document control | Document code, revision and effective date pulled from SETTINGS |
 | Audit trail | Full traceability from scan to approved certificate |
 
 ---
@@ -46,11 +49,11 @@ QR Code (equipment)
 Apps Script WebApp (doGet)
     │  pre-fills id, date, time
     ▼
-Google Forms
+Google Forms (production or lab)
     │  onFormSubmit trigger
     ▼
 RAW_DATA (Google Sheets)
-    │  FILTER formulas
+    │  FILTER formulas + N/A handling
     ▼
 Relatório Mensal (dynamic sheet)
     │  last business day trigger
@@ -90,10 +93,23 @@ gerarPDFsMensais()
 ## Project Structure
 
 ```
-├── Codigo.js           # Main Apps Script — all backend logic
+├── Config.gs           # Global constants, PropertiesService, SETTINGS loader
+├── WebApp.gs           # HTTP routing (doGet/doPost), zero business logic
+├── QrCode.gs           # QR Code scanning, access logging, HTML pages
+├── Forms.gs            # Form response normalization, RAW_DATA ingestion
+├── Pdf.gs              # Monthly PDF generation, Drive organization, triggers
+├── Utils.gs            # Pure utility functions — no I/O, no sheet access
+├── Certificado.gs      # Approval certificates, PCQI workflow, verification
+├── Integridade.gs      # SHA-256 hashing, LOG_INTEGRIDADE
+├── Notificacoes.gs     # Completeness alerts, PDF approval notifications
+├── Triggers.gs         # Trigger creation and removal
+├── Dev.gs              # Test suite and diagnostic functions (not triggered)
+├── Api.gs              # REST-like API endpoints via doGet
 ├── aprovacao.html      # Approval page HTML template
 ├── appsscript.json     # Apps Script manifest
 ├── .env.example        # Required configuration variables
+├── CONTEXT.md          # Full project briefing for development agents
+├── CHANGELOG.md        # Chronological engineering change log
 ├── docs/               # Project documentation
 └── assets/             # Supporting assets
 ```
@@ -105,7 +121,7 @@ gerarPDFsMensais()
 This repository uses placeholder values for all sensitive configuration. To deploy your own instance:
 
 1. Copy `.env.example` and fill in your values
-2. Update the `CONFIG` and `ALERTA` objects in `Codigo.js` with your actual IDs
+2. Run `setupPropriedades()` in `Config.gs` to populate PropertiesService
 3. Deploy as a Google Apps Script Web App
 4. Configure triggers: `configurarTriggerForms()`, `configurarTriggerAlerta()`, `configurarTriggerMensal()`
 

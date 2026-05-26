@@ -87,22 +87,29 @@ Web App URL:     https://script.google.com/macros/s/AKfycbxQNrEsV0fK9FjLx7K9_jsP
 
 ## 5. Configuração atual (Config.gs)
 
-### 5.1 Equipamentos cadastrados
+### 5.1 Equipamentos cadastrados (aba SETTINGS)
 
-| Código | Status no alerta |
-|---|---|
-| COD-1040 | Ativo |
-| COD-1041 | Ativo |
-| COD-1042 | Ativo |
-| COD-1043 | Inativo (equipamento fora de uso) |
-| COD-1044 | Ativo |
-| COD-1045 | Ativo |
-| COD-1046 | Ativo |
-| COD-1047 | Ativo |
-| COD-1048 | Ativo |
-| COD-1049 | Inativo (equipamento fora de uso) |
+| Código | Local | Equipamento | Documento | Alerta |
+|---|---|---|---|---|
+| COD-1040 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Ativo |
+| COD-1041 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Ativo |
+| COD-1042 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Ativo |
+| COD-1043 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Inativo |
+| COD-1044 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Ativo |
+| COD-1045 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Ativo |
+| COD-1046 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Ativo |
+| COD-1047 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Ativo |
+| COD-1048 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Ativo |
+| COD-1049 | (Produção) | (Produção) | FOR.IT.PS.PRO. 08-04 | Inativo |
+| COD-1185 | Lab. Microbiologia | Estufa Mesófilos | FOR.OS.LAB. 03-02 | Ativo |
+| COD-1183 | Lab. Microbiologia | Estufa Bolores e Leveduras | FOR.OS.LAB. 03-02 | Ativo |
+| COD-1184 | Lab. Microbiologia | Estufa Entero/Staph/E.coli | FOR.OS.LAB. 03-02 | Ativo |
+| COD-1181 | Lab. Microbiologia | Estufa Salmonella | FOR.OS.LAB. 03-02 | Ativo |
+| COD-1182 | Lab. Microbiologia | Estufa Coliformes termotolerantes | FOR.OS.LAB. 03-02 | Ativo |
+| COD-1130 | Lab. Microbiologia | Geladeira Microbiologia | FOR.OS.LAB. 03-02 | Ativo |
+| COD-1131 | Lab. Microbiologia | Ar Ambiente Microbiologia | FOR.OS.LAB. 03-02 | Ativo |
 
-Todos medem temperatura E umidade. Documento de referência: `FOR.IT.PS.PRO. 08-04`.
+Equipamentos de produção medem temperatura + umidade. Equipamentos de laboratório medem apenas temperatura (`SEM_UMIDADE = TRUE`; umidade gravada como `"N/A"`).
 
 ### 5.2 Credenciais
 
@@ -150,150 +157,54 @@ var ALERTA = {
 
 ---
 
-## 7. Próximas etapas — implementar NESTA ORDEM
+## 7. Etapas concluídas
 
-### ETAPA 1 — Aba SETTINGS na planilha Google Sheets
+### ✅ ETAPA 1 — Aba SETTINGS (concluída)
+Aba criada com 16 colunas e 17 equipamentos cadastrados.
 
-**Objetivo:** externalizar configuração operacional para que adição de
-equipamentos, mudança de limites e troca de e-mail não exijam edição de
-código.
+### ✅ ETAPA 2 — Config.gs lendo da SETTINGS (concluída)
+`carregarSettings_()` com cache em memória. `EQUIPAMENTOS_PDF` e `ALERTA.equipamentosAtivos` lidos dinamicamente.
 
-**Estrutura da aba SETTINGS:**
+### ✅ ETAPA 3 — Google Forms do laboratório (concluída)
+Forms sem umidade criado. `onFormSubmit` detecta 9 vs 10 colunas automaticamente. Umidade gravada como `"N/A"`.
 
-| Coluna | Header | Tipo | Exemplo |
+### ✅ ETAPA 4 — Certificado.gs dinâmico (concluída)
+Código do documento lido da SETTINGS via `obterConfigEquipamento_()`. Rodapé do certificado usa variável dinâmica.
+
+### ✅ ETAPA 5 — Unificação SETTINGS ← Lista de Equips. (concluída)
+Dados de FABRICANTE e MODELO migrados. Todas as referências à aba `Lista de Equips.` eliminadas do código. Aba obsoleta.
+
+### ✅ ETAPA 6 — Conformidade N/A e SGSAQ (concluída)
+- Coluna de umidade do Relatório Mensal exibe `"N/A"` para equipamentos sem higrômetro
+- Cabeçalhos dinâmicos (I1, C1, D5, D6, G5, G6) via VLOOKUP na SETTINGS
+- Colunas REVISAO, VIGENCIA e TITULO_DOC na SETTINGS
+
+---
+
+## 8. Estrutura atual da aba SETTINGS
+
+| Coluna | Header | Tipo | Descrição |
 |---|---|---|---|
-| A | CODIGO | String | COD-1040 |
-| B | NOME | String | Mistura 1 |
-| C | AREA | String | Produção |
-| D | DOCUMENTO | String | FOR.IT.PS.PRO. 08-04 |
-| E | SEM_UMIDADE | Boolean | FALSE |
-| F | TEMP_MIN | Number | 18 |
-| G | TEMP_MAX | Number | 28 |
-| H | UMID_MIN | Number | 30 |
-| I | UMID_MAX | Number | 65 |
-| J | ALERTA_ATIVO | Boolean | TRUE |
-| K | FORMS_ID | String | (ID do Google Forms vinculado) |
-
-**Linha 1:** cabeçalho com os headers acima, negrito.
-**A partir da linha 2:** um equipamento por linha.
-
-**Equipamentos que devem ser cadastrados na SETTINGS:**
-
-Equipamentos atuais (temperatura + umidade):
-| CODIGO | NOME | AREA | DOCUMENTO | SEM_UMIDADE | TEMP_MIN | TEMP_MAX | UMID_MIN | UMID_MAX | ALERTA_ATIVO |
-|---|---|---|---|---|---|---|---|---|---|
-| COD-1040 | (confirmar com usuário) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | TRUE |
-| COD-1041 | (confirmar) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | TRUE |
-| COD-1042 | (confirmar) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | TRUE |
-| COD-1043 | (confirmar) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | FALSE |
-| COD-1044 | (confirmar) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | TRUE |
-| COD-1045 | (confirmar) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | TRUE |
-| COD-1046 | (confirmar) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | TRUE |
-| COD-1047 | (confirmar) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | TRUE |
-| COD-1048 | (confirmar) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | TRUE |
-| COD-1049 | (confirmar) | (confirmar) | FOR.IT.PS.PRO. 08-04 | FALSE | 18 | 28 | 30 | 65 | FALSE |
-
-Equipamentos novos do laboratório (somente temperatura, SEM umidade):
-| CODIGO | NOME | AREA | DOCUMENTO | SEM_UMIDADE | TEMP_MIN | TEMP_MAX | UMID_MIN | UMID_MAX | ALERTA_ATIVO |
-|---|---|---|---|---|---|---|---|---|---|
-| COD-0911 | Estufa Mesófilos | Lab. Microbiologia | FOR.PS.LAB. 03-02 | TRUE | (confirmar) | (confirmar) | — | — | TRUE |
-| COD-0912 | Estufa Bolores e Leveduras | Lab. Microbiologia | FOR.PS.LAB. 03-02 | TRUE | (confirmar) | (confirmar) | — | — | TRUE |
-| COD-0913 | Estufa Entero/Staph/E.coli | Lab. Microbiologia | FOR.PS.LAB. 03-02 | TRUE | (confirmar) | (confirmar) | — | — | TRUE |
-| COD-0914 | Estufa Salmonella | Lab. Microbiologia | FOR.PS.LAB. 03-02 | TRUE | (confirmar) | (confirmar) | — | — | TRUE |
-| COD-0917 | Estufa Coliformes termotolerantes | Lab. Microbiologia | FOR.PS.LAB. 03-02 | TRUE | (confirmar) | (confirmar) | — | — | TRUE |
-| COD-1130 | Geladeira | Lab. Microbiologia | FOR.PS.LAB. 03-02 | TRUE | (confirmar) | (confirmar) | — | — | TRUE |
-| COD-1131 | Ar Ambiente | Lab. Microbiologia | FOR.PS.LAB. 03-02 | TRUE | (confirmar) | (confirmar) | — | — | TRUE |
-
-**ATENÇÃO:** Os campos marcados como "(confirmar)" devem ser perguntados
-ao usuário antes de preencher. Não inventar valores.
-
-**O que fazer nesta etapa:**
-1. Criar a aba SETTINGS na planilha com a estrutura acima
-2. Preencher os dados que já estão confirmados
-3. Perguntar ao usuário os valores faltantes antes de avançar
-4. NÃO alterar Config.gs ainda — isso é a Etapa 2
+| A | CODIGO | String | Código único do equipamento |
+| B | LOCAL | String | Localização física (ex: Lab. Microbiologia) |
+| C | EQUIPAMENTO | String | Nome do equipamento (ex: Estufa Mesófilos) |
+| D | DOCUMENTO | String | Código regulatório SGSAQ |
+| E | SEM_UMIDADE | Boolean | TRUE = sem higrômetro (lab) |
+| F | TEMP_MIN | Number | Limite inferior de temperatura |
+| G | TEMP_MAX | Number | Limite superior de temperatura |
+| H | UMID_MIN | Number | Limite inferior de umidade |
+| I | UMID_MAX | Number | Limite superior de umidade |
+| J | ALERTA_ATIVO | Boolean | TRUE = equipamento recebe alertas |
+| K | FORMS_ID | String | ID do Google Forms vinculado |
+| L | REVISAO | String | Revisão do documento (ex: Rev. 00) |
+| M | VIGENCIA | String | Data de vigência do documento |
+| N | TITULO_DOC | String | Título completo do documento |
+| O | FABRICANTE | String | Fabricante do equipamento |
+| P | MODELO | String | Modelo do equipamento |
 
 ---
 
-### ETAPA 2 — Adaptar Config.gs para ler da aba SETTINGS
-
-**Objetivo:** `Config.gs` passa a ler equipamentos, limites e configurações
-operacionais da aba SETTINGS em vez de tê-los hardcoded.
-
-**O que muda em Config.gs:**
-- `EQUIPAMENTOS_PDF` deixa de ser array fixo e passa a ser lido da SETTINGS
-- `ALERTA.equipamentosAtivos` passa a ser lido da coluna ALERTA_ATIVO da SETTINGS
-- Os limites nominais por equipamento passam a vir da SETTINGS
-- `CONFIG` e `PropertiesService` permanecem inalterados — credenciais
-  continuam no cofre
-
-**Nova função a criar em Config.gs:**
-```javascript
-// Lê a aba SETTINGS e retorna array de objetos com configuração
-// de cada equipamento. Chamada uma vez por invocação.
-function carregarSettings_() { ... }
-```
-
-**IMPORTANTE:** A estrutura modular existente não muda. Apenas
-`Config.gs` é alterado. Nenhum outro módulo precisa ser modificado
-nesta etapa.
-
----
-
-### ETAPA 3 — Google Forms separado para equipamentos do laboratório
-
-**Objetivo:** criar um Forms sem campo de umidade, vinculado à mesma
-RAW_DATA da planilha principal.
-
-**Campos do novo Forms (na mesma ordem do Forms atual):**
-1. Código do equipamento (lista suspensa com COD-0911 a COD-1131)
-2. Data da medição
-3. Horário
-4. Temperatura atual (°C)
-5. Temperatura máxima (°C)
-6. Temperatura mínima (°C)
-7. ~~Umidade (%%)~~ — NÃO incluir
-8. Responsável
-9. Observações (lista suspensa com os status padronizados)
-
-**onFormSubmit:** o trigger existente em `Forms.gs` deve funcionar
-para os dois formulários. O campo de umidade chegará vazio — gravar
-string vazia em RAW_DATA, sem erro.
-
-**Após criar o Forms:**
-- Atualizar SETTINGS coluna FORMS_ID com o ID do novo Forms
-- Gerar QR Codes novos para cada equipamento do lab
-- Imprimir etiquetas ZPL
-
----
-
-### ETAPA 4 — Adaptar Certificado.gs para usar DOCUMENTO da SETTINGS
-
-**Objetivo:** o PDF do certificado e o rodapé do relatório devem exibir
-o código do documento correto por equipamento, lido da SETTINGS.
-
-**O que muda em Certificado.gs:**
-- `gerarPdfCertificado_` recebe o código do documento como parâmetro
-  em vez de usar string hardcoded
-- Quem chama `gerarPdfCertificado_` (em `Pdf.gs`) passa o valor
-  correto lido da SETTINGS
-
-**Rodapé atual hardcoded em gerarPdfCertificado_:**
-```javascript
-'FOR.IT.PS.PRO. 08-04 | Rev. 00 | ' + CONFIG.empresa
-```
-
-**Deve virar:**
-```javascript
-documento + ' | Rev. 00 | ' + CONFIG.empresa
-```
-
-Onde `documento` é o valor da coluna DOCUMENTO da SETTINGS para o
-equipamento sendo processado.
-
----
-
-## 8. O que NÃO fazer
+## 9. O que NÃO fazer
 
 - Não alterar `RAW_DATA` — schema fixo de 12 colunas, não adicionar colunas
 - Não alterar `aprovacao.html` ou `appsscript.json` sem instrução explícita
@@ -303,3 +214,4 @@ equipamento sendo processado.
 - Não remover `mergearPDFs_` de `Pdf.gs` (marcada como legado, mantida)
 - Não hardcodar credenciais no código
 - Não fazer deploy sem o usuário confirmar que o teste passou
+

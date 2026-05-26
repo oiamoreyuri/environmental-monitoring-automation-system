@@ -12,9 +12,9 @@
 //   - WhatsApp via CallMeBot API
 //
 // NOTAS:
-//   - Nenhuma função aqui lê ou escreve na planilha principal.
-//   - verificarCompletude_ lê apenas "Respostas ao formulário 1"
-//     para checar registros do dia.
+//   - Nenhuma função aqui lê ou escreve na planilha principal
+//     exceto verificarCompletude_, que lê a RAW_DATA para
+//     checar registros do dia.
 //   - Falhas de envio são logadas mas não propagadas — um erro
 //     de notificação não deve interromper o fluxo principal.
 // ============================================================
@@ -62,18 +62,11 @@ function alertaTurnoTarde() { verificarCompletude_("tarde", 12, 23); }
 
 // ------------------------------------------------------------
 // verificarCompletude_(turno, horaInicio, horaFim)
-// Verifica se todos os equipamentos ativos têm registro
-// no turno especificado para o dia atual.
+// Verifica se todos os equipamentos ativos (via SETTINGS)
+// têm registro na RAW_DATA dentro da janela de horário do
+// turno para o dia atual.
 // Não executa em finais de semana.
 // Dispara alerta apenas se houver equipamentos sem registro.
-// ------------------------------------------------------------
-// ------------------------------------------------------------
-// verificarCompletude_(turno, horaInicio, horaFim)
-// Verifica se todos os equipamentos ativos têm registro
-// na RAW_DATA dentro da janela de horário do turno para
-// o dia atual.
-// RAW_DATA é a fonte canônica de verdade do sistema.
-// Não executa em finais de semana.
 // ------------------------------------------------------------
 function verificarCompletude_(turno, horaInicio, horaFim) {
   var hoje = new Date();

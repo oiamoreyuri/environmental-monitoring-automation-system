@@ -25,23 +25,12 @@
 //   [4] Temperatura atual (°C)
 //   [5] Temperatura máxima (°C)
 //   [6] Temperatura mínima (°C)
-//   [7] Umidade (%)
-//   [8] Responsável
-//   [9] Observações
-// ------------------------------------------------------------
-// ------------------------------------------------------------
-// onFormSubmit(e)
-// Mapeamento de colunas do Forms (e.values):
-//   [0] Carimbo data/hora
-//   [1] Código equipamento
-//   [2] Data da medição
-//   [3] Horário da medição
-//   [4] Temperatura atual (°C)
-//   [5] Temperatura máxima (°C)
-//   [6] Temperatura mínima (°C)
-//   [7] Umidade (%)
+//   [7] Umidade (%) — ausente em formulários do laboratório
 //   [8] Responsável
 //   [9] Observações (múltipla escolha — retorna string separada por vírgula)
+//
+// Formulários com higrômetro: 10 elementos em e.values.
+// Formulários sem higrômetro: 9 elementos (umidade gravada como "N/A").
 // ------------------------------------------------------------
 function onFormSubmit(e) {
   try {
