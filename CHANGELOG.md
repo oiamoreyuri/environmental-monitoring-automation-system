@@ -4,6 +4,45 @@ Este arquivo registra de forma técnica, cronológica e robusta todas as altera�
 
 ---
 
+## [2026-05-25 18:40] — Controle Documental Dinâmico (SGSAQ): REVISAO, VIGENCIA e TITULO_DOC
+
+### 🎯 Objetivo da Alteração
+Tornar completamente dinâmico o controle de documentos regulatórios (SGSAQ) no Relatório Mensal, eliminando toda referência estática a códigos de formulários, revisões e datas de vigência. Com esta alteração, a troca de equipamento no campo `B5` do Relatório Mensal atualiza automaticamente o código do documento, sua revisão, data de vigência e título — sem nenhuma intervenção manual em fórmulas ou código.
+
+### 📝 Descrição Técnica das Alterações
+
+#### 1. Novas Colunas na Aba `SETTINGS`
+*   **Colunas Adicionadas**:
+    *   `REVISAO` (Coluna L) — Número de revisão do documento regulatório (ex: `Rev. 00`).
+    *   `VIGENCIA` (Coluna M) — Data de vigência do documento no formato `dd/mm/aaaa`.
+    *   `TITULO_DOC` (Coluna N) — Título completo do documento conforme SGSAQ.
+*   **Valores Configurados**:
+    *   **Produção** (`COD-10XX`): `FOR.IT.PS.PRO. 08-04` | `Rev. 00` | `20/01/2026` | `REGISTRO DE MONITORAMENTO DE TEMPERATURA E UMIDADE AMBIENTAL`
+    *   **Laboratório** (`COD-118X`, `COD-113X`): `FOR.OS.LAB. 03-02` | `Rev. 00` | `25/05/2026` | `REGISTRO DE MONITORAMENTO DE TEMPERATURA DE ESTUFAS E GELADEIRA`
+
+#### 2. Fórmulas Dinâmicas no `Relatório Mensal`
+*   **Célula `I1`** (mesclada `I1:K3`):
+    *   Fórmula `VLOOKUP` multilinha com `CHAR(10)` que puxa dinamicamente: código do documento (Col D), revisão (Col L) e vigência formatada com `TEXT()` (Col M) da aba `SETTINGS` com base no equipamento selecionado em `B5`.
+    *   Fallback de segurança para `FOR.IT.PS.PRO. 08-04 / Rev. 00 / 20/01/2026`.
+*   **Célula `C1`** (mesclada `C1:F3`):
+    *   Fórmula `VLOOKUP` que puxa o `TITULO_DOC` (Col N) da aba `SETTINGS` com base no equipamento em `B5`.
+    *   Fallback de segurança para o título de Produção.
+
+#### 3. Correção do Código de Documento do Laboratório
+*   **Arquivo Modificado**: [Dev.gs](file:///home/yuri/Projetos/apps-script/environmental-monitoring-automation-system/Dev.gs).
+*   Atualizado o código regulatório dos equipamentos do laboratório de `FOR.PS.LAB. 03-02` para **`FOR.OS.LAB. 03-02`** (codificação correta do SGSAQ).
+*   Atualizada a asserção correspondente na suíte de testes unitários.
+
+#### 4. Correção de Serialização de Data
+*   O Google Sheets serializa datas como números inteiros ao concatená-las com `&`. A fórmula de `I1` foi corrigida com `TEXT(VLOOKUP(...);\"dd/mm/aaaa\")` para exibir a data formatada corretamente.
+
+### 🧪 Verificação e Validação
+*   **Execução**: A função `atualizarSgsaqLabEDocumentos()` foi executada com sucesso, criando as colunas e aplicando as fórmulas dinâmicas.
+*   **Teste de Chaveamento**: Ao alternar o equipamento em `B5` entre Produção e Laboratório, título, código, revisão e vigência atualizam automaticamente.
+*   **Sync & Push**: Código sincronizado via `clasp push` e versionado no GitHub.
+
+---
+
 ## [2026-05-25 13:58] — Rastreabilidade & Calibração: Migração de IDs do Laboratório para Códigos de Termômetros
 
 ### 🎯 Objetivo da Alteração
